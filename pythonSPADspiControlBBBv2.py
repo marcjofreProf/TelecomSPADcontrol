@@ -31,7 +31,7 @@ spi.loop = False  # Set to True for loopback testing
 spi.threewire = False  # Set to True for three-wire mode
 
 # Perform SPI transfer
-tx_data = [0xAF]  # Data to send
+tx_data = [0x8F]  # Data to send
 rx_data = spi.xfer(tx_data)  # Send and receive data
 
 # Print received data
