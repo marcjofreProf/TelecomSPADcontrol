@@ -1,20 +1,22 @@
 #!/bin/bash
 
-# Define the SPI device (SPI bus 1, Chip Select 0)
-SPI_DEV="/dev/spidev1.0"
+# Execute on a BeagleBone Black with no overlays loaded.
+# These commands require the default pin configuration in order to work.
+ 
+# For SPI1, /dev/spidev1.#
+#
+sudo config-pin p9_17 spi_cs
+sudo config-pin p9_18 spi
+sudo config-pin p9_21 spi
+sudo config-pin p9_22 spi_sclk
+ 
+# For SPI0, /dev/spidev2.#
+#
+sudo config-pin p9_28 spi_cs
+sudo config-pin p9_29 spi
+sudo config-pin p9_30 spi
+sudo config-pin p9_31 spi_sclk
 
-# SPI mode, bits per word, and speed (in Hz)
-MODE=0
-BITS=8
-SPEED=500000  # 500kHz
+python3 ./pythonSPADspiControlBBBv2.py
 
-# Data to send (hex bytes)
-DATA_TO_SEND="\xAA\x55\xFF\x00"
 
-# Set SPI mode, bits, and speed
-echo $MODE > /sys/class/spidev/spidev1.0/mode
-echo $BITS > /sys/class/spidev/spidev1.0/bits_per_word
-echo $SPEED > /sys/class/spidev/spidev1.0/max_speed_hz
-
-# Send and receive data using the spidev_test utility
-echo -n -e $DATA_TO_SEND | spidev_test -D $SPI_DEV -s $SPEED -b $BITS -v
