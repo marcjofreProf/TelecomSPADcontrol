@@ -1,3 +1,4 @@
+# Simple Script to set a secific voltage value 
 import spidev
 
 # Initialize SPI
@@ -40,3 +41,5 @@ rx_data = spi.xfer(tx_data)  # Send and receive data
 
 # Close SPI
 spi.close()
+
+print("Telecom SPAD specific voltage set.")
