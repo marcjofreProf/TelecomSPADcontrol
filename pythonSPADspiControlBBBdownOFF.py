@@ -33,17 +33,11 @@ spi.loop = False  # Set to True for loopback testing
 spi.threewire = False  # Set to True for three-wire mode
 
 
-# Initial starting voltage set, Perform SPI transfer
-tx_data = [0xFF]  # Data to send
-rx_data = spi.xfer(tx_data)  # Send and receive data
-time.sleep(1) # Sleep for 1 second
-
-
 # Compute operational values
 MAX_VOLTAGE_RATE = 2.0  # Maximum voltage ramp rate 2 V/s.
 
 MIN_VOLTAGE_VALUE = float(0xFF)  # Lowest DAC value (assuming 8-bit DAC control)
-MAX_VOLTAGE_VALUE = float(0x8F)  # Maximum DAC value
+MAX_VOLTAGE_VALUE = float(0x80)  # Maximum DAC value
 
 # Compute voltage step size
 step_range_conversion_byte=(90.0-40.0)/255.0 #around 0.24 V per bit. sweepeable voltage range with MAX1932 evaluation kit
@@ -53,7 +47,7 @@ voltage_step_count=int(np.round(voltage_range/step_range_conversion_byte)/decima
 
 step_time = (step_range_conversion_byte/MAX_VOLTAGE_RATE)*decimation_step_factor  # Time delay per step to maintain ramp rate
 values_apply=np.linspace(int(np.round(MIN_VOLTAGE_VALUE)),int(np.round(MAX_VOLTAGE_VALUE)),voltage_step_count,dtype=int)
-
+values_apply=arr[::-1] # reverse the order to descent the voltage
 # Convert the voltage values to np.uint8 (clamped between 0 and 255)
 #values_apply = np.clip(np.round(values_apply), 0, 255).astype(np.uint8)
 

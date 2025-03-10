@@ -17,6 +17,6 @@ sudo config-pin p9_29 spi
 sudo config-pin p9_30 spi
 sudo config-pin p9_31 spi_sclk
 
-python3 ./pythonSPADspiControlBBBv1.py
+python3 ./pythonSPADspiControlBBBupON.py
 
 
