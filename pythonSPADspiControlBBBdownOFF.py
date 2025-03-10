@@ -47,7 +47,7 @@ voltage_step_count=int(np.round(voltage_range/step_range_conversion_byte)/decima
 
 step_time = (step_range_conversion_byte/MAX_VOLTAGE_RATE)*decimation_step_factor  # Time delay per step to maintain ramp rate
 values_apply=np.linspace(int(np.round(MIN_VOLTAGE_VALUE)),int(np.round(MAX_VOLTAGE_VALUE)),voltage_step_count,dtype=int)
-values_apply=arr[::-1] # reverse the order to descent the voltage
+values_apply=values_apply[::-1] # reverse the order to descent the voltage
 # Convert the voltage values to np.uint8 (clamped between 0 and 255)
 #values_apply = np.clip(np.round(values_apply), 0, 255).astype(np.uint8)
 
