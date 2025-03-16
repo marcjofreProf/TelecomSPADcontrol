@@ -42,8 +42,15 @@ time.sleep(1) # Sleep for 1 second
 # Compute operational values
 MAX_VOLTAGE_RATE = 2.0  # Maximum voltage ramp rate 2 V/s.
 
+DESIRED_VOLTAGE = 60  #Notice that this value is approximated
+MAX_VALUE = 88.7
+MIN_VALUE = 39.5
+RATIO = (MAX_VALUE - MIN_VALUE) / 255
+INT_VALUE = int((DESIRED_VOLTAGE - MIN_VALUE) / RATIO)
+INVERTED_RATIO = 256 - INT_VALUE
+
 MIN_VOLTAGE_VALUE = float(0xFF)  # Lowest DAC value (assuming 8-bit DAC control)
-MAX_VOLTAGE_VALUE = float(0x80)  # Maximum DAC value
+MAX_VOLTAGE_VALUE = float(INVERTED_RATIO)  # Maximum DAC value
 
 # Compute voltage step size
 step_range_conversion_byte=(90.0-40.0)/255.0 #around 0.24 V per bit. sweepeable voltage range with MAX1932 evaluation kit
