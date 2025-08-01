@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 # Simple Script to set a secific voltage value 
 import spidev, time, tqdm
 import numpy as np
