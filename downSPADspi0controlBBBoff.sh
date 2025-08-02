@@ -2,6 +2,8 @@
 #Geiger signal control disable
 cd /sys/class/pwm/pwmchip7/pwm-7\:0
 sudo sh -c "echo '0' >> ./enable"
+# Re-confirm order
+sudo sh -c "echo '0' >> ./enable"
 
 #DC bias control disable
 cd /home/debian/Scripts/TelecomSPADcontrol 

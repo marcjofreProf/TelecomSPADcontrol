@@ -5,10 +5,11 @@
 # Geiger signal control
 cd /sys/class/pwm/pwmchip7/pwm-7\:0
 sudo config-pin p8_19 pwm
-sudo sh -c "echo '1000000' >> ./period"
-sudo sh -c "echo '100000' >> ./duty_cycle"
+sudo sh -c "echo '1000' >> ./period"
+sudo sh -c "echo '10' >> ./duty_cycle"
 sudo sh -c "echo '1' >> ./enable"
-
+# Re-confirm order
+sudo sh -c "echo '1' >> ./enable"
 
 # DC bias control 
 cd /home/debian/Scripts/TelecomSPADcontrol
