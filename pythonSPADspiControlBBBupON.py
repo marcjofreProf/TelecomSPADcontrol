@@ -44,7 +44,7 @@ time.sleep(1) # Sleep for 1 second
 # Compute operational values
 MAX_VOLTAGE_RATE = 2.0  # Maximum voltage ramp rate 2 V/s.
 
-DESIRED_VOLTAGE = 85  #Notice that this value is approximated
+DESIRED_VOLTAGE = 60  #Notice that this value is approximated
 MAX_VALUE = 88.7
 MIN_VALUE = 39.5
 RATIO = (MAX_VALUE - MIN_VALUE) / 255
