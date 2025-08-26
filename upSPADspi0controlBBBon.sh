@@ -1,15 +1,23 @@
 #!/bin/bash
 
+# Script to initiate the DC bias low speed ramp, and Gating if needed.
+
+# To run the script
+# debian@beaglebone:~/Scripts/TelecomSPADcontrol$ ./upSPADspi0controlBBBon.sh
+
 # Execute on a BeagleBone Black with no overlays loaded.
 # These commands require the default pin configuration in order to work.
-# Geiger signal control
+# Ask user wether to activate Gating or not
+read -p "Turn ON Gating [y/n]?: " answerGating
+# Convert answer to lowercase for case-insensitive comparison
+answerGating=${answerGating,,}
+
+# First, disable Gating just in case it was on
 cd /sys/class/pwm/pwmchip7/pwm-7\:0
-sudo config-pin p8_19 pwm
-sudo sh -c "echo '1000' >> ./period"
-sudo sh -c "echo '100' >> ./duty_cycle"
-sudo sh -c "echo '1' >> ./enable"
+sudo sh -c "echo '0' >> ./enable"
 # Re-confirm order
-sudo sh -c "echo '1' >> ./enable"
+sudo sh -c "echo '0' >> ./enable"
+
 
 # DC bias control 
 cd /home/debian/Scripts/TelecomSPADcontrol
@@ -29,4 +37,20 @@ sudo config-pin p9_31 spi_sclk
 
 python3 ./pythonSPADspiControlBBBupON.py
 
-
+# Gating signal control
+if [[ "$answerGating" == "y" || "$answerGating" == "yes" ]]; then
+    cd /sys/class/pwm/pwmchip7/pwm-7\:0
+    sudo config-pin p8_19 pwm
+    sudo sh -c "echo '50' >> ./period"
+    sudo sh -c "echo '5' >> ./duty_cycle"
+    sudo sh -c "echo '1' >> ./enable"
+    # Re-confirm order
+    sudo sh -c "echo '1' >> ./enable"
+    echo "Gating ON"
+else
+    cd /sys/class/pwm/pwmchip7/pwm-7\:0
+    sudo sh -c "echo '0' >> ./enable"
+    # Re-confirm order
+    sudo sh -c "echo '0' >> ./enable"
+    echo "Gating OFF"
+fi
