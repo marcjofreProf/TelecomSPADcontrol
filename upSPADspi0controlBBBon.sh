@@ -14,10 +14,13 @@ answerGating=${answerGating,,}
 
 # First, disable Gating just in case it was on
 cd /sys/class/pwm/pwmchip7/pwm-7\:0
+sudo config-pin P8_19 pwm
+# Always at least set a period and duty cycle so that the pwm can be disabled
+sudo sh -c "echo '50' >> ./period"
+sudo sh -c "echo '5' >> ./duty_cycle"
 sudo sh -c "echo '0' >> ./enable"
 # Re-confirm order
 sudo sh -c "echo '0' >> ./enable"
-
 
 # DC bias control 
 cd /home/debian/Scripts/TelecomSPADcontrol
@@ -38,9 +41,9 @@ sudo config-pin p9_31 spi_sclk
 python3 ./pythonSPADspiControlBBBupON.py
 
 # Gating signal control
+sudo config-pin P8_19 pwm
 if [[ "$answerGating" == "y" || "$answerGating" == "yes" ]]; then
     cd /sys/class/pwm/pwmchip7/pwm-7\:0
-    sudo config-pin p8_19 pwm
     sudo sh -c "echo '50' >> ./period"
     sudo sh -c "echo '5' >> ./duty_cycle"
     sudo sh -c "echo '1' >> ./enable"
@@ -49,6 +52,9 @@ if [[ "$answerGating" == "y" || "$answerGating" == "yes" ]]; then
     echo "Gating ON"
 else
     cd /sys/class/pwm/pwmchip7/pwm-7\:0
+    # Always at least set a period and duty cycle so that the pwm can be disabled
+    sudo sh -c "echo '50' >> ./period"
+    sudo sh -c "echo '5' >> ./duty_cycle"
     sudo sh -c "echo '0' >> ./enable"
     # Re-confirm order
     sudo sh -c "echo '0' >> ./enable"
