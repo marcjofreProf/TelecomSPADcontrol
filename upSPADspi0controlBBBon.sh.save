@@ -22,15 +22,16 @@ sudo sh -c "echo '0' >> ./enable"
 # Re-confirm order
 sudo sh -c "echo '0' >> ./enable"
 
-# Then, turn off DC schottky biasing through optocoupled relay
-cd /sys/class/pwm/pwmchip1/pwm-1\:0
-sudo config-pin P9_22 pwm
+# turn-off optocoupled relay
+cd /sys/class/pwm/pwmchip4/pwm-4\:0
+sudo config-pin P9_14 pwm
 # Always at least set a period and duty cycle so that the pwm can be disabled
-sudo sh -c "echo '1000000000' >> ./period"
-sudo sh -c "echo '1000000000' >> ./duty_cycle"
+sudo sh -c "echo '50' >> ./period"
+sudo sh -c "echo '5' >> ./duty_cycle"
 sudo sh -c "echo '0' >> ./enable"
 # Re-confirm order
 sudo sh -c "echo '0' >> ./enable"
+
 
 # DC bias control 
 cd /home/debian/Scripts/TelecomSPADcontrol
@@ -49,16 +50,6 @@ sudo config-pin p9_30 spi
 sudo config-pin p9_31 spi_sclk
 
 python3 ./pythonSPADspiControlBBBupON.py
-echo "DC biasing ramp done"
-
-# After the DC biasing ramp, turn on optocoupled relay
-cd /sys/class/pwm/pwmchip1/pwm-1\:0
-sudo sh -c "echo '1000000000' >> ./period"
-sudo sh -c "echo '1000000000' >> ./duty_cycle"
-sudo sh -c "echo '1' >> ./enable"
-# Re-confirm order
-sudo sh -c "echo '1' >> ./enable"
-echo "DC diode biasing point set"
 
 # Gating signal control
 sudo config-pin P8_19 pwm
