@@ -53,6 +53,7 @@ echo "DC biasing ramp done"
 
 # After the DC biasing ramp, turn on optocoupled relay
 cd /sys/class/pwm/pwmchip1/pwm-1\:0
+sudo config-pin P9_22 pwm
 sudo sh -c "echo '1000000000' >> ./period"
 sudo sh -c "echo '1000000000' >> ./duty_cycle"
 sudo sh -c "echo '1' >> ./enable"
