@@ -65,8 +65,8 @@ echo "DC biasing ramp done"
 sudo config-pin P8_19 pwm
 if [[ "$answerGating" == "y" || "$answerGating" == "yes" ]]; then
     cd /sys/class/pwm/pwmchip7/pwm-7\:0
-    sudo sh -c "echo '50' >> ./period"
-    sudo sh -c "echo '5' >> ./duty_cycle"
+    sudo sh -c "echo '1000' >> ./period"
+    sudo sh -c "echo '50' >> ./duty_cycle"
     sudo sh -c "echo '1' >> ./enable"
     # Re-confirm order
     sudo sh -c "echo '1' >> ./enable"
