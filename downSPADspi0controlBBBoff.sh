@@ -28,4 +28,5 @@ sudo sh -c "echo '0' >> ./enable"
 cd /home/debian/Scripts/TelecomSPADcontrol 
 python3 ./pythonSPADspiControlBBBdownOFF.py
 
+echo "DC bias voltage ramp down done"
 

@@ -49,7 +49,7 @@ sudo config-pin p9_30 spi
 sudo config-pin p9_31 spi_sclk
 
 python3 ./pythonSPADspiControlBBBupON.py
-echo "DC biasing ramp done"
+#echo "DC bias voltage ramp up done"
 
 ## After the DC biasing ramp, turn on optocoupled relay
 #cd /sys/class/pwm/pwmchip1/pwm-1\:0
@@ -81,3 +81,5 @@ else
     sudo sh -c "echo '0' >> ./enable"
     echo "Gating OFF"
 fi
+
+echo "DC bias voltage ramp up done"
