@@ -8,29 +8,19 @@
 # Execute on a BeagleBone Black with no overlays loaded.
 # These commands require the default pin configuration in order to work.
 # Ask user wether to activate Gating or not
-read -p "Turn ON Gating [y/n]?: " answerGating
+read -p "Turn ON Geiger [y/n]?: " answerGeiger
 # Convert answer to lowercase for case-insensitive comparison
-answerGating=${answerGating,,}
+answerGeiger=${answerGeiger,,}
 
-# First, disable Gating just in case it was on
+# First, disable Geiger just in case it was on
 cd /sys/class/pwm/pwmchip7/pwm-7\:0
 sudo config-pin P8_19 pwm
 # Always at least set a period and duty cycle so that the pwm can be disabled
-sudo sh -c "echo '100000' >> ./period"
-sudo sh -c "echo '50000' >> ./duty_cycle"
+sudo sh -c "echo '2000' >> ./period"
+sudo sh -c "echo '1000' >> ./duty_cycle"
 sudo sh -c "echo '0' >> ./enable"
 # Re-confirm order
 sudo sh -c "echo '0' >> ./enable"
-
-## Then, turn off DC schottky biasing through optocoupled relay
-#cd /sys/class/pwm/pwmchip1/pwm-1\:0
-#sudo config-pin P9_22 pwm
-## Always at least set a period and duty cycle so that the pwm can be disabled
-#sudo sh -c "echo '1000000000' >> ./period"
-#sudo sh -c "echo '1000000000' >> ./duty_cycle"
-#sudo sh -c "echo '0' >> ./enable"
-## Re-confirm order
-#sudo sh -c "echo '0' >> ./enable"
 
 # DC bias control 
 cd /home/debian/Scripts/TelecomSPADcontrol
@@ -51,35 +41,25 @@ sudo config-pin p9_31 spi_sclk
 python3 ./pythonSPADspiControlBBBupON.py
 #echo "DC bias voltage ramp up done"
 
-## After the DC biasing ramp, turn on optocoupled relay
-#cd /sys/class/pwm/pwmchip1/pwm-1\:0
-#sudo config-pin P9_22 pwm
-#sudo sh -c "echo '1000000000' >> ./period"
-#sudo sh -c "echo '1000000000' >> ./duty_cycle"
-#sudo sh -c "echo '1' >> ./enable"
-## Re-confirm order
-#sudo sh -c "echo '1' >> ./enable"
-#echo "DC diode biasing point set"
-
-# Gating signal control
+# Geiger signal control
 sudo config-pin P8_19 pwm
-if [[ "$answerGating" == "y" || "$answerGating" == "yes" ]]; then
+if [[ "$answerGeiger" == "y" || "$answerGeiger" == "yes" ]]; then
     cd /sys/class/pwm/pwmchip7/pwm-7\:0
-    sudo sh -c "echo '100000' >> ./period"
-    sudo sh -c "echo '50000' >> ./duty_cycle"
+    sudo sh -c "echo '2000' >> ./period"
+    sudo sh -c "echo '1000' >> ./duty_cycle"
     sudo sh -c "echo '1' >> ./enable"
     # Re-confirm order
     sudo sh -c "echo '1' >> ./enable"
-    echo "Gating ON"
+    echo "Geiger ON"
 else
     cd /sys/class/pwm/pwmchip7/pwm-7\:0
     # Always at least set a period and duty cycle so that the pwm can be disabled
-    sudo sh -c "echo '100000' >> ./period"
-    sudo sh -c "echo '50000' >> ./duty_cycle"
+    sudo sh -c "echo '2000' >> ./period"
+    sudo sh -c "echo '1000' >> ./duty_cycle"
     sudo sh -c "echo '0' >> ./enable"
     # Re-confirm order
     sudo sh -c "echo '0' >> ./enable"
-    echo "Gating OFF"
+    echo "Geiger OFF"
 fi
 
 echo "DC bias voltage ramp up done"
