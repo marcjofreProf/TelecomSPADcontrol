@@ -1,3 +1,4 @@
+#!/bin/bash
 # Scrip to directly gate the system
 sudo config-pin P8_19 pwm
 

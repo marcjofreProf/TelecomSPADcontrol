@@ -3,7 +3,7 @@
 # Script to initiate the DC bias low speed ramp, and Gating if needed.
 
 # To run the script
-# debian@beaglebone:~/Scripts/TelecomSPADcontrol$ ./upSPADspi0controlBBBon.sh
+# debian@beaglebone:~/Scripts/TelecomSPADcontrol/ManualControl$ ./upSPADspi0controlBBBon.sh
 
 # Execute on a BeagleBone Black with no overlays loaded.
 # These commands require the default pin configuration in order to work.
@@ -23,7 +23,7 @@ sudo sh -c "echo '0' >> ./enable"
 sudo sh -c "echo '0' >> ./enable"
 
 # DC bias control 
-cd /home/debian/Scripts/TelecomSPADcontrol
+cd /home/debian/Scripts/TelecomSPADcontrol/ManualControl
 # For SPI1, /dev/spidev1.#
 #
 # sudo config-pin p9_17 spi_cs
