@@ -133,6 +133,7 @@ sudo /etc/init.d/rsyslog stop # stop logging
 #        ptpTimescale 1 timeTraceable 1 frequencyTraceable 0 \
 #        timeSource 0xa0"
 
+: << 'COMMENT'
 sudo timedatectl set-ntp false
 sudo systemctl stop systemd-timesyncd # stop system synch
 sudo systemctl disable systemd-timesyncd # disable system synch
@@ -145,7 +146,9 @@ sudo systemctl disable systemd-timedated
 sudo nice -n $NicenestPriorValue ./linuxptp/ptp4l -i eth0 -s -H -f PTP4lConfigQLANprojectSlave.cfg &
 
 sudo nice -n $NicenestPriorValue ./linuxptp/phc2sys -s eth0 -c CLOCK_REALTIME -w -f PTP4lConfigQLANprojectSlave.cfg & # -w -f PTP2pcConfigQLANprojectSlave.cfg & # -m # Important to launch phc2sys first (not in slave)
+COMMENT
 
+: << 'COMMENT'
 if [[ $is_rt_kernel -eq 0 ]]; then
 	echo 'Enabling PRU pins'
 	sudo config-pin P9_28 pruin
@@ -172,9 +175,11 @@ if [[ $is_rt_kernel -eq 0 ]]; then
 	sudo config-pin P8_45 pruout
 	sudo config-pin P8_46 pruout
 fi
+COMMENT
 
 sudo nice -n $NicenestPriorValue ./CppScripts/GPIOspadSYScont &
 
+: << 'COMMENT'
 ## Update process priority values
 pidAux=$(pidof -s ptp0)
 sudo chrt -f -p $PriorityValue $pidAux
@@ -212,10 +217,12 @@ if [[ $is_rt_kernel -eq 1 ]]; then
   #pidAux=$(pgrep -f "irq/43-4a100000")
   #sudo chrt -f -p $PriorityValue $pidAux
 fi
+COMMENT
 
 pidAux=$(pgrep -f "GPIOspadSYScont")
 sudo chrt -f -p $PriorityNoSoHighValue $pidAux
 
+: << 'COMMENT'
 # Maybe using adjtimex is bad idea because it is an extra layer not controlled by synchronization protocols
 ## Once priorities have been set, hence synch-protocols fine adjusted, adjust kernel clock (also known as system clock) to hardware clock (also known as cmos clock)
 sleep 10 # give time to time protocols to lock
@@ -236,6 +243,7 @@ if [ $? -eq 0 ]; then
 fi
 
 echo "$line_to_add" | sudo crontab -
+COMMENT
 
 read -r -p "Press Ctrl+C to kill launched processes
 " # Block operation until Ctrl+C is pressed

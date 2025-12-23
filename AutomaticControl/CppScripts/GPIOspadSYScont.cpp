@@ -22,6 +22,7 @@ Script for PRU real-time handling of multi SPAD system
 #include<pthread.h>
 #include<unistd.h>
 #include <algorithm> // For std::nth_element
+#include <signal.h>
 // Watchdog
 #include <sys/ioctl.h>
 #include <linux/watchdog.h>
@@ -101,36 +102,8 @@ GPIO::GPIO(){// Redeclaration of constructor GPIOspadSYScont when no argument is
 	prussdrv_pru_clear_event(PRU_EVTOUT_0, PRU0_ARM_INTERRUPT);
 	prussdrv_pru_clear_event(PRU_EVTOUT_1, PRU1_ARM_INTERRUPT);
 	
-	if (SlowMemoryPermanentStorageFlag){
-	    	// Open file where temporally are stored timetaggs	
-		streamDDRpru.open(string(PRUdataPATH1) + string("TimetaggingData"), std::ios::binary | std::ios::in | std::ios::out | std::ios::trunc);// Open for write and read, and clears all previous content	
-		if (!streamDDRpru.is_open()) {
-			streamDDRpru.open(string(PRUdataPATH2) + string("TimetaggingData"), std::ios::binary | std::ios::in | std::ios::out | std::ios::trunc);// Open for write and read, and clears all previous content
-			if (!streamDDRpru.is_open()) {
-				cout << "Failed to open the streamDDRpru file." << endl;
-			}
-		}
-		
-		if (streamDDRpru.is_open()){
-			streamDDRpru.close();	
-			//streamDDRpru.clear(); // will reset these state flags, allowing you to continue using the stream for additional I/O operations
-		}
-	}
-	//// Open file where temporally are stored synch - Not used	
-	//streamSynchpru.open(string(PRUdataPATH1) + string("SynchTimetaggingData"), std::ios::binary | std::ios::in | std::ios::out | std::ios::trunc);// Open for write and read, and clears all previous content	
-	//if (!streamSynchpru.is_open()) {
-	//	streamSynchpru.open(string(PRUdataPATH2) + string("SynchTimetaggingData"), std::ios::binary | std::ios::in | std::ios::out | std::ios::trunc);// Open for write and read, and clears all previous content
-	//	if (!streamSynchpru.is_open()) {
-	//        	cout << "Failed to open the streamSynchpru file." << endl;
-	//        }
-        //}
-        //
-        //if (streamSynchpru.is_open()){
-	//	streamSynchpru.close();	
-	//	//streamSynchpru.clear(); // will reset these state flags, allowing you to continue using the stream for additional I/O operations
-	//}
 	
-        // Initialize DDM
+    // Initialize DDM
 	LOCAL_DDMinit(); // DDR (Double Data Rate): A class of memory technology used in DRAM where data is transferred on both the rising and falling edges of the clock signal, effectively doubling the data rate without increasing the clock frequency.
 	// Here we can update memory space assigned address
 	valpHolder=(unsigned short*)&sharedMem_int[OFFSET_SHAREDRAM+1];
@@ -141,16 +114,13 @@ GPIO::GPIO(){// Redeclaration of constructor GPIOspadSYScont when no argument is
 	// Timetagging
 	// Execute program
 	// Load and execute the PRU program on the PRU0
+	/*
 	pru0dataMem_int[0]=static_cast<unsigned int>(0); // set no command
 	pru0dataMem_int[1]=static_cast<unsigned int>(this->NumQuBitsPerRun); // set number captures, with overflow clock
 	pru0dataMem_int[2]=static_cast<unsigned int>(this->GuardPeriod);// Indicate period of the sequence signal, so that it falls correctly and is picked up by the Signal PRU. Link between system clock and PRU clock. It has to be a power of 2
 	pru0dataMem_int[3]=static_cast<unsigned int>(1);
 	pru0dataMem_int[4]=static_cast<unsigned int>(this->TTGcoincWin); // set coincidence window length
-	//if (prussdrv_exec_program(PRU_Operation_NUM, "./CppScripts/BBBhw/PRUassTaggDetScript.bin") == -1){
-	//	if (prussdrv_exec_program(PRU_Operation_NUM, "./BBBhw/PRUassTaggDetScript.bin") == -1){
-	//		perror("prussdrv_exec_program non successfull writing of PRUassTaggDetScript.bin");
-	//	}
-	//}
+	*/
 	if (prussdrv_exec_program(PRU_Operation_NUM, "./CppScripts/BBBhw/PRUassTaggDetScriptSimple.bin") == -1){
 		if (prussdrv_exec_program(PRU_Operation_NUM, "./BBBhw/PRUassTaggDetScriptSimple.bin") == -1){
 			perror("prussdrv_exec_program non successfull writing of PRUassTaggDetScriptSimple.bin");
@@ -159,6 +129,7 @@ GPIO::GPIO(){// Redeclaration of constructor GPIOspadSYScont when no argument is
 	////prussdrv_pru_enable(PRU_Operation_NUM);
 	
 	// Generate signals
+	/*
 	pru1dataMem_int[0]=static_cast<unsigned int>(0); // set no command
 	pru1dataMem_int[1]=static_cast<unsigned int>(this->NumberRepetitionsSignal); // set the number of repetitions
 	pru1dataMem_int[2]=static_cast<unsigned int>(1);// Referenced to the synch trig period
@@ -167,6 +138,7 @@ GPIO::GPIO(){// Redeclaration of constructor GPIOspadSYScont when no argument is
 	pru1dataMem_int[5]=static_cast<unsigned int>(this->SigONPeriod);
 	pru1dataMem_int[6]=static_cast<unsigned int>(this->ContCorrSign);
 	pru1dataMem_int[7]=static_cast<unsigned int>(this->SigOFFPeriod);// Off time
+	*/
 	// Load and execute the PRU program on the PRU1
 	if (prussdrv_exec_program(PRU_Signal_NUM, "./CppScripts/BBBhw/PRUassTrigSigScriptHist4Sig.bin") == -1){//if (prussdrv_exec_program(PRU_Signal_NUM, "./CppScripts/BBBhw/PRUassTrigSigScript.bin") == -1){
 		if (prussdrv_exec_program(PRU_Signal_NUM, "./BBBhw/PRUassTrigSigScriptHist4Sig.bin") == -1){//if (prussdrv_exec_program(PRU_Signal_NUM, "./BBBhw/PRUassTrigSigScript.bin") == -1){
@@ -185,31 +157,9 @@ GPIO::GPIO(){// Redeclaration of constructor GPIOspadSYScont when no argument is
 	cout << "Attention doing SendTriggerSignalsSelfTest. To be removed" << endl;	
 	*/
 
-	// Selection of the periodic synchronization correction
-	switch (SynchCorrectionTimeFreqNoneFlag){
-		case 3:{cout << "GPIO::Time and frequency synchronization periodic correction selected!" << endl;break;}
-		case 2:{cout << "GPIO::Time synchronization periodic correction selected!" << endl;break;}
-		case 1:{cout << "GPIO::Frequency synchronization periodic correction selected!" << endl;break;}
-		default:{cout << "GPIO::None synchronization periodic correction selected!" << endl;break;}
-	}
-	cout << "GPIO::Wait to proceed, calibrating synchronization!..." << endl;
-	if (SynchPlaneDomainMode==true){
-		cout << "GPIO::For the time being synch. controlled by control plane...adds jitter in timetaggs...in the future a real-time clock with phase reference synch should be used!!!" << endl;
-	}
-	else{
-		cout << "GPIO::Synch. controlled by real-time plane..." << endl;
-	}
 	////prussdrv_pru_enable(PRU_Signal_NUM);
-	sleep(30); // Give some time to load programs in PRUs and the synch protocols to initiate and lock after prioritazion and adjtimex. Very important, otherwise bad values might be retrieved
+	sleep(1); // Give some time to load programs in PRUs and the synch protocols to initiate and lock after prioritazion and adjtimex. Very important, otherwise bad values might be retrieved
 	
-	// Reset values of the sharedMem_int at the beggining
-	for (iIterDump=0; iIterDump<((NumQuBitsPerRun/2)*3); iIterDump++){
-		sharedMem_int[OFFSET_SHAREDRAM+1+iIterDump]=static_cast<unsigned int>(0x00000000); // Put it all to zeros
-	}
-	// Some array initializations
-	for (int i=0;i<MaxNumPulses;i++){
-		duration_FinalInitialMeasTrigAuxArray[i]=0;
-	}
 	  /*// Doing debbuging checks - Debugging 1	  
 	  std::thread threadReadTimeStampsAux=std::thread(&GPIO::ReadTimeStamps,this);
 	  std::thread threadSendTriggerSignalsAux=std::thread(&GPIO::SendTriggerSignals,this);
@@ -230,9 +180,9 @@ GPIO::GPIO(){// Redeclaration of constructor GPIOspadSYScont when no argument is
 
 int GPIO::InitAgentProcess(){
 	// Launch periodic synchronization of the IEP timer - like slotted time synchronization protocol
-	//this->threadRefSynch=std::thread(&GPIO::PRUsignalTimerSynch,this);// More absolute in time
- 	this->threadRefSynch=std::thread(&GPIO::PRUsignalTimerSynchJitterLessInterrupt,this);// reduce the interrupt jitter of non-real-time OS
- 	//this->threadRefSynch.detach();// If detach, then at the end comment the join. Otherwise, uncomment the join().
+	////this->threadRefSynch=std::thread(&GPIO::PRUsignalTimerSynch,this);// More absolute in time
+ 	//this->threadRefSynch=std::thread(&GPIO::PRUsignalTimerSynchJitterLessInterrupt,this);// reduce the interrupt jitter of non-real-time OS
+ 	////this->threadRefSynch.detach();// If detach, then at the end comment the join. Otherwise, uncomment the join().
 	return 0; //All OK
 }
 /////////////////////////////////////////////////////////
@@ -248,6 +198,18 @@ bool GPIO::setMaxRrPriority(int PriorityValAux){// For rapidly handling interrup
 		return false;
 	}
 	return true;
+}
+
+/// Errors handling
+std::atomic<bool> signalReceivedFlag{false};
+static void SignalINTHandler(int s) {
+signalReceivedFlag.store(true);
+cout << "Caught SIGINT" << endl;
+}
+
+static void SignalPIPEHandler(int s) {
+signalReceivedFlag.store(true);
+cout << "Caught SIGPIPE" << endl;
 }
 ////////////////////////////////////////////////////////
 void GPIO::acquire() {
@@ -275,28 +237,6 @@ this->valueSemaphore.store(true,std::memory_order_release); // Make sure it stay
 //this->valueSemaphore.fetch_add(1,std::memory_order_release);
 }
 //////////////////////////////////////////////
-struct timespec GPIO::SemaphoreSetWhileWait(){
-	struct timespec requestSemaphoreWhileWaitAux;	
-	auto duration_since_epochFutureTimePointAux=QPLAFutureTimePoint.time_since_epoch();
-	// Convert duration to desired time
-	long long int TimePointClockCurrentFinal_time_as_count = static_cast<long long int>(std::chrono::duration_cast<std::chrono::nanoseconds>(duration_since_epochFutureTimePointAux).count())-static_cast<long long int>(TimePRU1synchPeriod); // Add an offset, since the final barrier is implemented with a busy wait
-
-	requestSemaphoreWhileWaitAux.tv_sec=(int)(TimePointClockCurrentFinal_time_as_count/((long)1000000000));
-	requestSemaphoreWhileWaitAux.tv_nsec=(long)(TimePointClockCurrentFinal_time_as_count%(long)1000000000);
-	return requestSemaphoreWhileWaitAux;
-}
-
-struct timespec GPIO::CoincidenceSetWhileWait(){
-	struct timespec requestCoincidenceWhileWaitAux;	
-	auto duration_since_epochFutureTimePointAux=QPLAFutureTimePointSleep.time_since_epoch();
-	// Convert duration to desired time
-	long long int TimePointClockCurrentFinal_time_as_count = static_cast<long long int>(std::chrono::duration_cast<std::chrono::nanoseconds>(duration_since_epochFutureTimePointAux).count()); // Add an offset, since the final barrier is implemented with a busy wait
-
-	requestCoincidenceWhileWaitAux.tv_sec=(int)(TimePointClockCurrentFinal_time_as_count/((long)1000000000));
-	requestCoincidenceWhileWaitAux.tv_nsec=(long)(TimePointClockCurrentFinal_time_as_count%(long)1000000000);
-	return requestCoincidenceWhileWaitAux;
-}
-
 struct timespec GPIO::SetWhileWait(){
 	struct timespec requestWhileWaitAux;
 	this->TimePointClockCurrentSynchPRU1future=this->TimePointClockCurrentSynchPRU1future+std::chrono::nanoseconds(this->TimePRU1synchPeriod);
@@ -334,369 +274,9 @@ struct timespec GPIO::SetWhileWait(){
 	return requestWhileWaitAux;
 }
 
-int GPIO::PRUsignalTimerSynchJitterLessInterrupt(){
-	try{
-	this->setMaxRrPriority(PriorityValTop);// For rapidly handling interrupts, for the main instance and the periodic thread. It stalls operation RealTime Kernel (commented, then)
-	this->TimePointClockCurrentSynchPRU1future=Clock::now();// First time
-	//SynchRem=static_cast<int>((static_cast<long double>(iepPRUtimerRange32bits)-fmodl((static_cast<long double>(std::chrono::duration_cast<std::chrono::nanoseconds>(TimePointClockCurrentSynchPRU1future.time_since_epoch()).count())/static_cast<long double>(PRUclockStepPeriodNanoseconds)),static_cast<long double>(iepPRUtimerRange32bits)))*static_cast<long double>(PRUclockStepPeriodNanoseconds));
-	//this->TimePointClockCurrentSynchPRU1future=this->TimePointClockCurrentSynchPRU1future+std::chrono::nanoseconds(SynchRem);
-	// Timer management
-	tfd = timerfd_create(CLOCK_REALTIME, TFD_NONBLOCK);
-	if (tfd==-1){
-		cout << "GPIO::PRUsignalTimerSynchJitterLessInterrupt Failed to create timerfd!!!" << endl;
-		exit(EXIT_SUCCESS);
-	}
-	int duration_FinalInitialMeasTrig=2*ApproxInterruptTime;
-	unsigned long long int ULLISynchRem=(static_cast<unsigned long long int>(std::chrono::duration_cast<std::chrono::nanoseconds>(TimePointClockCurrentSynchPRU1future.time_since_epoch()).count())/static_cast<unsigned long long int>(TimePRU1synchPeriod)+1)*static_cast<unsigned long long int>(TimePRU1synchPeriod);
-	std::chrono::nanoseconds duration_back(ULLISynchRem);
-	this->TimePointClockCurrentSynchPRU1future=Clock::time_point(duration_back);	
-	this->requestWhileWait = this->SetWhileWait();// Used with non-busy wait
-	// First setting of time - Probably IEP timer from PRU only accepts resetting to 0	
-	//auto duration_since_epochTimeNow=(Clock::now()).time_since_epoch();
-	//this->PRUoffsetDriftError=static_cast<double>(fmodl(static_cast<long double>((static_cast<unsigned long long int>(std::chrono::duration_cast<std::chrono::nanoseconds>(duration_since_epochTimeNow).count())/static_cast<unsigned long long int>(TimePRU1synchPeriod)+1)*static_cast<unsigned long long int>(TimePRU1synchPeriod)+static_cast<unsigned long long int>(duration_FinalInitialCountAuxArrayAvg))/static_cast<long double>(PRUclockStepPeriodNanoseconds),static_cast<long double>(iepPRUtimerRange32bits)));
-	//this->NextSynchPRUcorrection=static_cast<unsigned int>(static_cast<unsigned int>((static_cast<unsigned long long int>(this->PRUoffsetDriftError)+0*static_cast<unsigned long long int>(LostCounts))%iepPRUtimerRange32bits));
-	this->NextSynchPRUcorrection=static_cast<unsigned int>(0);// Resetting to 0
-	this->NextSynchPRUcommand=static_cast<unsigned int>(11); // set command 11, do absolute correction
-	while(true){
-		//clock_nanosleep(CLOCK_REALTIME,TIMER_ABSTIME,&requestWhileWait,NULL);
-		//if (this->ManualSemaphoreExtra==false){	
-		// In C++, when evaluating a compound condition with && (logical AND), the expressions are evaluated from left to right, and the evaluation stops as soon as the result is determined.
-		if (Clock::now()<(this->TimePointClockCurrentSynchPRU1future-std::chrono::nanoseconds(3*TimePRUcommandDelay)) and clock_nanosleep(CLOCK_REALTIME,TIMER_ABSTIME,&requestWhileWait,NULL)==0 and this->ManualSemaphoreExtra==false){// It was possible to execute when needed, and still on time to be executed (otherwise skip it to not produce accumulations)
-			if (this->ResetPeriodicallyTimerPRU1){
-				this->ManualSemaphore=true;// Very critical to not produce measurement deviations when assessing the periodic snchronization
-				this->acquire();// Very critical to not produce measurement deviations when assessing the periodic snchronization
-				// https://www.kernel.org/doc/html/latest/timers/timers-howto.html
-				if (((this->iIterPRUcurrentTimerValSynch<static_cast<long long int>(NumSynchMeasAvgAux) and abs(duration_FinalInitialMeasTrig)>(ApproxInterruptTime/4) and abs(duration_FinalInitialMeasTrigAuxAvg)>(ApproxInterruptTime/1)) or this->iIterPRUcurrentTimerValSynch<static_cast<long long int>(NumSynchMeasAvgAux/2)) and this->iIterPRUcurrentTimerValSynch%2==0){// Initially run many times so that interrupt handling warms up
-					this->NextSynchPRUcorrection=static_cast<unsigned int>(0); // resetting to 0
-					this->NextSynchPRUcommand=static_cast<unsigned int>(11);// Hard setting of the time
-					this->iIterPRUcurrentTimerVal=0;// reset this value
-				}
-				
-				pru1dataMem_int[3]=static_cast<unsigned int>(this->NextSynchPRUcorrection);// apply correction.
-				pru1dataMem_int[0]=static_cast<unsigned int>(this->NextSynchPRUcommand); // apply command
-				// Not a good strategy to keep changing the priority since ther kernel scheduler is not capable to adapt ot it.
-				//this->setMaxRrPriority(PriorityValTop);// Set top priority
-				// There is a big variation if the waiting function to launch the measurement is not properly done (with the appropiate tools)
-				// sleep_for seems to operate more stable although it adds a long overhead time, compared to while()
-				// sleep_for takes longer in average maybe because it has to re-load all the context and so forth after each sleep...
-				//std::this_thread::sleep_for(std::chrono::duration_cast<std::chrono::nanoseconds>(this->TimePointClockCurrentSynchPRU1future-Clock::now()));//while(Clock::now() < this->TimePointClockCurrentSynchPRU1future);//{//;// Busy waiting
-				
-				//std::this_thread::sleep_until(this->TimePointClockCurrentSynchPRU1future); // Better to use sleep_until because it will adapt to changes in the current time by the time synchronization protocol
-				select(tfd+1, &rfds, NULL, NULL, &TimerTimeout);//TimerTFDretval = select(tfd+1, &rfds, NULL, NULL, NULL); /* Last parameter = NULL --> wait forever */
-				
-				//	// Yield the CPU to other threads
-        		//	std::this_thread::yield();
-				//}				
-				//this->TimePointClockSendCommandFinal=Clock::now(); // Final measurement.
-				// Probably by measuring the time of more relevant functions (generation of interrupt; and reception from PRU of its interrupt, it does a better job of estimating the real thing)
-				prussdrv_pru_send_event(22);
-				//this->TimePointClockSendCommandFinal=Clock::now(); // Final measurement.
-				// Not a good strategy to keep changing the priority since ther kernel scheduler is not capable to adapt ot it.
-				//this->setMaxRrPriority(PriorityValRegular); // Set regular priority
-				retInterruptsPRU1=prussdrv_pru_wait_event_timeout(PRU_EVTOUT_1,WaitTimeInterruptPRUShort);// timeout is sufficiently large because it it adjusted when generating signals, not synch whiis very fast (just reset the timer)										
-				this->TimePointClockSendCommandFinal=Clock::now(); // Final measurement.
-				// Not a good strategy to keep changing the priority since ther kernel scheduler is not capable to adapt ot it.
-				//this->setMaxRrPriority(PriorityValRegular);// Set regular priority
-				//cout << "PRUsignalTimerSynch: retInterruptsPRU1: " << retInterruptsPRU1 << endl;
-				if (retInterruptsPRU1>0){
-					prussdrv_pru_clear_event(PRU_EVTOUT_1, PRU1_ARM_INTERRUPT);// So it has time to clear the interrupt for the later iterations
-				}
-				else if (retInterruptsPRU1==0){
-					prussdrv_pru_clear_event(PRU_EVTOUT_1, PRU1_ARM_INTERRUPT);// So it has time to clear the interrupt for the later iterations
-					cout << "GPIO::PRUsignalTimerSynch took to much time. Reset PRU1 if necessary." << endl;
-				}
-				else{
-					prussdrv_pru_clear_event(PRU_EVTOUT_1, PRU1_ARM_INTERRUPT);// So it has time to clear the interrupt for the later iterations
-					cout << "PRU1 interrupt error" << endl;
-				}
-				// Clear the timer
-				if (FD_ISSET(tfd, &rfds)){
-					read(tfd,&TimerExpirations,sizeof(TimerExpirations));
-				}
-				/*
-				// Warm up interrupt handling for Timetagg PRU0
-				pru0dataMem_int[0]=static_cast<unsigned int>(8); // set command warm-up
-				prussdrv_pru_send_event(21);				
-				retInterruptsPRU0=prussdrv_pru_wait_event_timeout(PRU_EVTOUT_0,WaitTimeInterruptPRUShort);				
-
-				//cout << "retInterruptsPRU0: " << retInterruptsPRU0 << endl;
-				if (retInterruptsPRU0>0){
-					prussdrv_pru_clear_event(PRU_EVTOUT_0, PRU0_ARM_INTERRUPT);// So it has time to clear the interrupt for the later iterations
-				}
-				else if (retInterruptsPRU0==0){
-					prussdrv_pru_clear_event(PRU_EVTOUT_0, PRU0_ARM_INTERRUPT);// So it has time to clear the interrupt for the later iterations
-					cout << "GPIO::PRU0 warm-up took to much time for the TimeTagg. Reset PRUO if necessary." << endl;		
-				}
-				else{
-					prussdrv_pru_clear_event(PRU_EVTOUT_0, PRU0_ARM_INTERRUPT);// So it has time to clear the interrupt for the later iterations
-					cout << "PRU0 interrupt poll error" << endl;
-				}*/
-
-				//pru1dataMem_int[2]// Current IEP timer sample
-				//pru1dataMem_int[3]// Correction to apply to IEP timer
-				this->PRUcurrentTimerValWrap=static_cast<double>(pru1dataMem_int[2]);
-				
-				/*// Correct for interrupt handling time might add a bias in the estimation/reading or correct in the timerfd
-				//duration_FinalInitialCountAux=static_cast<double>(std::chrono::duration_cast<std::chrono::nanoseconds>(this->TimePointClockSendCommandFinal-this->TimePointClockCurrentSynchPRU1future).count());
-				// If we assume that the larger part of the latency from the barrier wakeup to the actual interrupt handling is the awakening, we can try to substract his time.
-				////this->PRUcurrentTimerValWrap=this->PRUcurrentTimerValWrap-(duration_FinalInitialCountAux-0.0*duration_FinalInitialCountAuxArrayAvg)/static_cast<double>(PRUclockStepPeriodNanoseconds);
-				this->PRUcurrentTimerValWrap=this->PRUcurrentTimerValWrap-duration_FinalInitialCountAuxArrayAvg/static_cast<double>(PRUclockStepPeriodNanoseconds);
-				if (this->PRUcurrentTimerValWrap<0.0){
-					this->PRUcurrentTimerValWrap=static_cast<double>(static_cast<double>(iepPRUtimerRange32bits)-fmod(-this->PRUcurrentTimerValWrap,static_cast<double>(iepPRUtimerRange32bits)));
-				}
-				else{
-					this->PRUcurrentTimerValWrap=static_cast<double>(fmod(this->PRUcurrentTimerValWrap,static_cast<double>(iepPRUtimerRange32bits)));
-				}*/
-
-				this->PRUcurrentTimerValWrapLong=this->PRUcurrentTimerValWrap;// Update value
-				// Unwrap
-				if (this->PRUcurrentTimerValWrap<=this->PRUcurrentTimerValOldWrap){this->PRUcurrentTimerVal=this->PRUcurrentTimerValWrap+(static_cast<double>(iepPRUtimerRange32bits)-this->PRUcurrentTimerValOldWrap);}
-				else{this->PRUcurrentTimerVal=this->PRUcurrentTimerValWrap;}
-
-				if (this->PRUcurrentTimerValWrapLong<=this->PRUcurrentTimerValOldWrapLong){this->PRUcurrentTimerValLong=this->PRUcurrentTimerValWrapLong+(static_cast<double>(iepPRUtimerRange32bits)-this->PRUcurrentTimerValOldWrapLong);}
-				else{this->PRUcurrentTimerValLong=this->PRUcurrentTimerValWrapLong;}
-
-				this->QPLAFutureTimePointOld=this->TimePointClockCurrentSynchPRU1future;// update value
-
-				if (((this->iIterPRUcurrentTimerValSynch<static_cast<long long int>(NumSynchMeasAvgAux) and abs(duration_FinalInitialMeasTrig)>(ApproxInterruptTime/4) and abs(duration_FinalInitialMeasTrigAuxAvg)>(ApproxInterruptTime/1)) or this->iIterPRUcurrentTimerValSynch<static_cast<long long int>(NumSynchMeasAvgAux/2)) and this->iIterPRUcurrentTimerValSynch%2==1){// Initially compute the time for interrupt handling
-					if (this->iIterPRUcurrentTimerValSynch>=(static_cast<long long int>(NumSynchMeasAvgAux)-2)){
-						cout << "GPIO::PRUsignalTimerSynchJitterLessInterrupt initial time synchronization calibration not achieved! Increase number of NumSynchMeasAvgAux." << endl;
-					}
-					// To track time difference between last emission/reception - Not used
-					//this->QPLAFutureTimePointOld=this->TimePointClockCurrentSynchPRU1future;// Initialization value
-					//this->QPLAFutureTimePointOld1=this->QPLAFutureTimePointOld; // Initialization value
-					//this->QPLAFutureTimePointOld2=this->QPLAFutureTimePointOld; // Initialization value
-					//this->QPLAFutureTimePointOld3=this->QPLAFutureTimePointOld; // Initialization value
-					//this->QPLAFutureTimePointOld4=this->QPLAFutureTimePointOld; // Initialization value
-					//this->QPLAFutureTimePointOld5=this->QPLAFutureTimePointOld; // Initialization value
-					//this->QPLAFutureTimePointOld6=this->QPLAFutureTimePointOld; // Initialization value
-					//this->QPLAFutureTimePointOld7=this->QPLAFutureTimePointOld; // Initialization value
-
-					//int duration_FinalInitialMeasTrig=static_cast<int>(std::chrono::duration_cast<std::chrono::nanoseconds>(this->TimePointClockSendCommandFinal-this->TimePointClockCurrentSynchPRU1future).count());
-					duration_FinalInitialMeasTrig=static_cast<int>(this->PRUcurrentTimerValWrap)-static_cast<int>(static_cast<double>(this->iIterPRUcurrentTimerValPass*this->TimePRU1synchPeriod)/static_cast<double>(PRUclockStepPeriodNanoseconds));// static_cast<int>(std::chrono::duration_cast<std::chrono::nanoseconds>(this->TimePointClockSendCommandFinal-this->TimePointClockCurrentSynchPRU1future).count());
-					//cout << "GPIO::duration_FinalInitialMeasTrig: " << duration_FinalInitialMeasTrig << endl;
-					duration_FinalInitialCountAux=static_cast<double>(duration_FinalInitialMeasTrig);// This final value achieved is subtracted in the absolute time synch readings
-					this->duration_FinalInitialMeasTrigAuxArray[TrigAuxIterCount%NumSynchMeasAvgAux]=duration_FinalInitialMeasTrig;
-					this->duration_FinalInitialMeasTrigAuxAvg=this->IntMedianFilterSubArray(this->duration_FinalInitialMeasTrigAuxArray,static_cast<int>(this->iIterPRUcurrentTimerValSynch));
-					//cout << "GPIO::duration_FinalInitialMeasTrigAuxAvg: " << duration_FinalInitialMeasTrigAuxAvg << endl;			
-					// Below for initial synch calculation compensation
-					duration_FinalInitialCountAuxArrayAvgInitial=static_cast<double>(duration_FinalInitialMeasTrigAuxAvg);
-				}
-				else{
-					duration_FinalInitialMeasTrig=static_cast<int>(std::chrono::duration_cast<std::chrono::nanoseconds>(this->TimePointClockSendCommandFinal-this->TimePointClockCurrentSynchPRU1future).count());
-					//cout << "GPIO::duration_FinalInitialMeasTrig: " << duration_FinalInitialMeasTrig << endl;
-					duration_FinalInitialCountAux=static_cast<double>(duration_FinalInitialMeasTrig);// This final value achieved is subtracted in the absolute time synch readings
-					this->duration_FinalInitialMeasTrigAuxArray[TrigAuxIterCount%NumSynchMeasAvgAux]=duration_FinalInitialMeasTrig;
-					this->duration_FinalInitialMeasTrigAuxAvg=this->IntMedianFilterSubArray(this->duration_FinalInitialMeasTrigAuxArray,NumSynchMeasAvgAux);
-					//cout << "GPIO::duration_FinalInitialMeasTrigAuxAvg: " << duration_FinalInitialMeasTrigAuxAvg << endl;			
-					if (abs(this->duration_FinalInitialMeasTrigAuxAvg)>ApproxInterruptTime and this->iIterPRUcurrentTimerValSynch>(2*NumSynchMeasAvgAux)){// Much longer than for client node (which typically is below 5000) maybe because more effort to serve PTP messages
-						cout << "GPIO::Time for pre processing the time barrier is too short/long " << this->duration_FinalInitialMeasTrigAuxAvg << " ...adjust TimePRUcommandDelay! Set to nominal value of " << static_cast<int>(ApproxInterruptTime) << "..." << endl;
-						this->duration_FinalInitialMeasTrigAuxAvg=ApproxInterruptTime;// For the time being adjust it to the nominal initial value
-					}
-					duration_FinalInitialCountAuxArrayAvg=static_cast<double>(duration_FinalInitialMeasTrigAuxAvg);
-				}
-				this->TrigAuxIterCount++;				
-				// Short range measurements to retrieve offsets (little effected by relative frequency difference)
-				// Compute error - Absolute corrected error of absolute error after removing the frequency difference. It adds jitter but probably ensures that hardwware clock offsets are removed periodically (a different story is the offset due to links which is calibrated with the algortm).
-				// Dealing with long long int matters due to floating or not precition!!!!
-				long double PRUoffsetDriftErrorAbsAux=0.0;
-				// Maybe it is important to substract duration_FinalInitialCountAuxArrayAvgInitial to mak eit more time absolut and the synchronization algorith in QPLA always works
-				// Not really, SUPER IMPORTANT, in order to not have jumps between periods, it has to be substracted the initial offset error static_cast<long double>(duration_FinalInitialCountAuxArrayAvgInitial)!!!
-				// Import computation below for absolute PRU time comparison between nodes
-				PRUoffsetDriftErrorAbsAux=-fmodl(static_cast<long double>(this->iIterPRUcurrentTimerVal)*static_cast<long double>(this->TimePRU1synchPeriod)/static_cast<long double>(PRUclockStepPeriodNanoseconds),static_cast<long double>(iepPRUtimerRange32bits))+static_cast<long double>(this->PRUcurrentTimerValWrap)-static_cast<long double>(duration_FinalInitialCountAuxArrayAvgInitial);
-				//this->PRUoffsetDriftErrorAbs=static_cast<double>(PRUoffsetDriftErrorAbsAux);//
-				//// Below unwrap the difference
-				if (PRUoffsetDriftErrorAbsAux>(static_cast<long double>(iepPRUtimerRange32bits)/2.0)){
-					PRUoffsetDriftErrorAbsAux=-(static_cast<long double>(iepPRUtimerRange32bits)-PRUoffsetDriftErrorAbsAux);
-				}	
-				else if(PRUoffsetDriftErrorAbsAux<(-static_cast<long double>(iepPRUtimerRange32bits)/2.0)){
-					PRUoffsetDriftErrorAbsAux=-(-static_cast<long double>(iepPRUtimerRange32bits)-PRUoffsetDriftErrorAbsAux);
-				}
-				if (PRUoffsetDriftErrorAbsAux<0.0){
-					this->PRUoffsetDriftErrorAbs=static_cast<double>(-fmodl(-PRUoffsetDriftErrorAbsAux,static_cast<long double>(iepPRUtimerRange32bits)));
-				}
-				else{
-					this->PRUoffsetDriftErrorAbs=static_cast<double>(fmodl(PRUoffsetDriftErrorAbsAux,static_cast<long double>(iepPRUtimerRange32bits)));
-				}
-				
-				// Absolute corrected error
-				this->PRUoffsetDriftErrorAbsArray[iIterPRUcurrentTimerValSynch%ExtraNumSynchMeasAvgAux]=this->PRUoffsetDriftErrorAbs;
-				this->PRUoffsetDriftErrorAbsAvg=DoubleMedianFilterSubArray(PRUoffsetDriftErrorAbsArray,ExtraNumSynchMeasAvgAux);// Since we are applying a filter of length NumSynchMeasAvgAux, temporally it effects somehow the longer the filter. Altough it is difficult to correct
-				
-				if (this->iIterPRUcurrentTimerVal<(2*ExtraNumSynchMeasAvgAux)){// Update until offset fully calculated
-					// First update of the values
-					QPLAFutureTimePointSendTriggerSignalsOld=this->TimePointClockCurrentSynchPRU1future;// update value
-					QPLAFutureTimePointReadTimeStampsOld=this->TimePointClockCurrentSynchPRU1future;// update value
-				}
-
-				// The absolute time error has a natural wander due to the fact that the conversion from PRU ticks to real time (and viceversa is not exactly PRUclockStepPeriodNanoseconds). Therefore, an effective relative frequency difference is present that it can be accounted for (this relative frequency difference is computed below).
-				if (this->iIterPRUcurrentTimerValPassLong>DistTimePRU1synchPeriod){// Long range measurements to retrieve relative frequency differences
-					// Computations for Synch calculation for PRU0 compensation
-					// Compute Synch - Relative
-					this->EstimateSynch=fmod((static_cast<double>(this->iIterPRUcurrentTimerValPassLong*this->TimePRU1synchPeriod))/static_cast<double>(PRUclockStepPeriodNanoseconds),static_cast<double>(iepPRUtimerRange32bits))/(this->PRUcurrentTimerValLong-this->PRUcurrentTimerValOldWrapLong);// Only correct for PRUcurrentTimerValOld with the PRUoffsetDriftErrorAppliedOldRaw to be able to measure the real synch drift and measure it (not affected by the correction).
-					this->EstimateSynchArray[iIterPRUcurrentTimerValSynchLong%NumSynchMeasAvgAux]=this->EstimateSynch;
-					//this->ManualSemaphoreExtra=true;
-					this->EstimateSynchAvg=DoubleMedianFilterSubArray(EstimateSynchArray,NumSynchMeasAvgAux);
-					this->EstimateSynchAvg=this->EstimateSynchAvg*1000000000.0;
-					//cout << "GPIO::EstimateSynchAvg: " << this->EstimateSynchAvg << endl;
-					if (abs(EstimateSynchAvg-PRUoffsetDriftErrorAbsAvgOldTruncatedPeriodic)>truncatedSynchTrigPeriodPeriodic){
-						EstimateSynchAvg=round(EstimateSynchAvg/truncatedSynchTrigPeriodPeriodic)*truncatedSynchTrigPeriodPeriodic;
-					}
-					else{
-						EstimateSynchAvg=truncatedPRUoffsetDriftErrorAbsAvgOldPeriodic;
-					}
-					PRUoffsetDriftErrorAbsAvgOldTruncatedPeriodic=EstimateSynchAvg;// Update value
-					truncatedPRUoffsetDriftErrorAbsAvgOldPeriodic=EstimateSynchAvg; // Update value
-					this->EstimateSynchAvg=this->EstimateSynchAvg/1000000000.0;
-					if (this->EstimateSynchAvg>1.5 or this->EstimateSynchAvg<0.5){this->EstimateSynchAvg=1.0;}// Robustness
-					// Frequency synchronization correction
-					// Compute error - Relative correction of the frequency difference. This provides like the stability of the hardware clock referenced to the system clock (disciplined with network protocol)...so in the order of 10^-7
-					//this->PRUoffsetDriftError=(-fmod((static_cast<double>(this->iIterPRUcurrentTimerValPassLong*this->TimePRU1synchPeriod))/static_cast<double>(PRUclockStepPeriodNanoseconds),static_cast<double>(iepPRUtimerRange32bits))+(this->PRUcurrentTimerValLong-this->PRUcurrentTimerValOldWrapLong))/static_cast<long double>(TimePRU1synchPeriod); // The multiplication by SynchTrigPeriod is done before applying it in the Triggering and TimeTagging functions
-					
-					//// Compute error - Relative correction of the frequency difference of the absolute time. This provides like the stability of the hardware clock referenced to the system clock (disciplined with network protocol)...so in the order of 10^-7
-					//this->PRUoffsetDriftError=static_cast<long double>(this->PRUoffsetDriftErrorAbsAvg-this->PRUoffsetDriftErrorAbsAvgOld)/static_cast<long double>(this->iIterPRUcurrentTimerValPassLong*TimePRU1synchPeriod);
-					//this->PRUoffsetDriftErrorAbsAvgOld=this->PRUoffsetDriftErrorAbsAvg;// Update value
-					//// Relative error average
-					//this->PRUoffsetDriftErrorArray[iIterPRUcurrentTimerValSynchLong%NumSynchMeasAvgAux]=this->PRUoffsetDriftError;
-					//this->PRUoffsetDriftErrorAvg=LongDoubleMedianFilterSubArray(PRUoffsetDriftErrorArray,NumSynchMeasAvgAux);
-
-					// Update values
-					this->PRUcurrentTimerValOldWrapLong=this->PRUcurrentTimerValWrap;// Update value
-					this->iIterPRUcurrentTimerValPassLong=0; // Reset value
-					this->iIterPRUcurrentTimerValSynchLong++; // Update value
-				//} Concatenated with the relative frequency difference calculation
-
-				//// Compute error - Relative correction of the frequency difference of the absolute time. This provides like the stability of the hardware clock referenced to the system clock (disciplined with network protocol)...so in the order of ppb
-				//if ((iIterPRUcurrentTimerValSynch%static_cast<unsigned long long int>(NumSynchMeasAvgAux/ExtraExtraNumSynchMeasAvgAux))==0 and CountPRUcurrentTimerValSynchLong!=0){
-				
-					// RElative implementation
-					this->PRUoffsetDriftError=this->PRUoffsetDriftErrorAbsAvgOld-static_cast<long double>(this->PRUoffsetDriftErrorAbsAvg);
-					this->PRUoffsetDriftErrorAbsAvgOld=static_cast<long double>(this->PRUoffsetDriftErrorAbsAvg);// Update value
-					/*
-					// Below unwrap the difference
-					if (this->PRUoffsetDriftError>(static_cast<long double>(iepPRUtimerRange32bits)/2.0)){
-						this->PRUoffsetDriftError=-(static_cast<long double>(iepPRUtimerRange32bits)-this->PRUoffsetDriftError);
-					}	
-					else if(this->PRUoffsetDriftError<(-static_cast<long double>(iepPRUtimerRange32bits)/2.0)){
-						this->PRUoffsetDriftError=-(-static_cast<long double>(iepPRUtimerRange32bits)-this->PRUoffsetDriftError);
-					}
-					if (this->PRUoffsetDriftError<0.0){
-						this->PRUoffsetDriftError=static_cast<double>(-fmodl(-this->PRUoffsetDriftError,static_cast<long double>(iepPRUtimerRange32bits)));
-					}
-					else{
-						this->PRUoffsetDriftError=static_cast<double>(fmodl(this->PRUoffsetDriftError,static_cast<long double>(iepPRUtimerRange32bits)));
-					}*/
-					this->PRUoffsetDriftError=PRUoffsetDriftError/(static_cast<long double>(this->CountPRUcurrentTimerValSynchLong)*static_cast<long double>(TimePRU1synchPeriod)/static_cast<long double>(PRUclockStepPeriodNanoseconds));// Normalize to the measurement time
-					
-					//// Relative error average
-					this->PRUoffsetDriftErrorArray[iIterPRUcurrentTimerValSynchLongExtra%ExtraExtraNumSynchMeasAvgAux]=this->PRUoffsetDriftError;
-					this->PRUoffsetDriftErrorAvg=LongDoubleMedianFilterSubArray(PRUoffsetDriftErrorArray,ExtraExtraNumSynchMeasAvgAux);// averaging
-					
-					//cout << "GPI::PRUoffsetDriftErrorAvg: " << PRUoffsetDriftErrorAvg << endl;
-					PRUoffsetDriftErrorAvg=PRUoffsetDriftErrorAvg*1000000000.0;// Make it integer like
-					//cout << "GPI::PRUoffsetDriftErrorAvg: " << PRUoffsetDriftErrorAvg << " ppb" << endl;
-					// Smart version of the truncation - avoid being at the border of transition
-					if (abs(PRUoffsetDriftErrorAvg-PRUoffsetDriftErrorAvgOldTruncatedPeriodic)>static_cast<long double>(truncatedSynchAbsRelFreq)){
-						if (PRUoffsetDriftErrorAvg<0.0){
-							PRUoffsetDriftErrorAvg=-floorl(-PRUoffsetDriftErrorAvg/static_cast<long double>(truncatedSynchAbsRelFreq))*static_cast<long double>(truncatedSynchAbsRelFreq);
-						}
-						else{
-							PRUoffsetDriftErrorAvg=floorl(PRUoffsetDriftErrorAvg/static_cast<long double>(truncatedSynchAbsRelFreq))*static_cast<long double>(truncatedSynchAbsRelFreq);
-						}
-					}
-					else{
-						PRUoffsetDriftErrorAvg=truncatedPRUoffsetDriftErrorAvgOldPeriodic;
-					}
-					PRUoffsetDriftErrorAvgOldTruncatedPeriodic=PRUoffsetDriftErrorAvg;// Update value
-					truncatedPRUoffsetDriftErrorAvgOldPeriodic=PRUoffsetDriftErrorAvg; // Update value
-					PRUoffsetDriftErrorAvg=PRUoffsetDriftErrorAvg/1000000000.0;// Scale it back
-
-					if (abs(this->PRUoffsetDriftErrorAvg)<this->PRUoffsetDriftErrorAvgThresh and this->iIterPRUcurrentTimerValSynchLong>(1.5*NumSynchMeasAvgAux)){this->PRUoffsetDriftErrorAvg=0.0;}// Do not apply relative frequency difference if it is below a certain value
-					
-					CountPRUcurrentTimerValSynchLong=0;// Update value
-					iIterPRUcurrentTimerValSynchLongExtra++;// Update value
-				}
-
-				//	
-				this->ManualSemaphoreExtra=false;
-				this->ManualSemaphore=false;
-				this->release();		
-				
-				this->iIterPRUcurrentTimerValSynch++;
-				this->NextSynchPRUcorrection=0;
-				this->NextSynchPRUcommand=static_cast<unsigned int>(10);// set command 10, to execute synch functions no correction
-				
-				// Updates for next round				
-				this->PRUcurrentTimerValOldWrap=this->PRUcurrentTimerValWrap;// Update
-				this->iIterPRUcurrentTimerValPass=0; // reset value							
-			}				
-		} //end if
-		else{
-			// Clear the timer
-			if (FD_ISSET(tfd, &rfds)){
-				read(tfd,&TimerExpirations,sizeof(TimerExpirations));
-			}
-		}
-		
-		// Information
-		if (this->ResetPeriodicallyTimerPRU1 and (this->iIterPRUcurrentTimerVal%(8192*NumSynchMeasAvgAux)==0) and this->iIterPRUcurrentTimerValSynchLong>NumSynchMeasAvgAux){
-			////cout << "PRUcurrentTimerVal: " << this->PRUcurrentTimerVal << endl;
-			////cout << "PRUoffsetDriftError: " << this->PRUoffsetDriftError << endl;
-			cout << "GPIO::Information about synchronization:" << endl;
-			cout << "GPIO::Rel. freq. diff. to abs. time - unit conversion drift: " << this->PRUoffsetDriftErrorAvg*1000000000 << " ppb" << endl;
-			cout << "GPIO::Abs. time diff. - unit conversion drift: " << PRUoffsetDriftErrorAbsAvg << " PRU units" << endl;
-			cout << "GPIO::INDICATIVE only!!! Time to handle interrupt: " << this->duration_FinalInitialCountAuxArrayAvg << " ns." << endl; // A large variation does not imply that the correction offset (time and frequency) are wrong!!!!
-			////cout << "PRUoffsetDriftErrorIntegral: " << this->PRUoffsetDriftErrorIntegral << endl;
-			////cout << "PRUoffsetDriftErrorAppliedRaw: " << this->PRUoffsetDriftErrorAppliedRaw << endl;
-			cout << "GPIO::Ratio rel. freq. diff: " << this->EstimateSynchAvg << endl;
-			////cout << "EstimateSynchDirectionAvg: " << this->EstimateSynchDirectionAvg << endl;
-			//if (this->EstimateSynchDirectionAvg<1.0){cout << "Clock EstimateSynch advancing" << endl;}
-			//else if (this->EstimateSynchDirectionAvg>1.0){cout << "Clock EstimateSynch delaying" << endl;}
-			//else{cout << "Clock EstimateSynch neutral" << endl;}
-			////cout << "duration_FinalInitialDriftAux: " << duration_FinalInitialDriftAux << endl;
-			////cout << "this->iIterPRUcurrentTimerValPass: "<< this->iIterPRUcurrentTimerValPass << endl;
-			////cout << "this->iIterPRUcurrentTimerValSynch: "<< this->iIterPRUcurrentTimerValSynch << endl;
-		}		
-		// RE-upload some variables
-		this->requestWhileWait = this->SetWhileWait();// Used with non-busy wait
-		this->iIterPRUcurrentTimerVal++; // Increase value
-		this->iIterPRUcurrentTimerValPass++; // Increase value
-		this->iIterPRUcurrentTimerValPassLong++; // Increase value
-		this->CountPRUcurrentTimerValSynchLong++;// Increase value
-		if (this->iIterPRUcurrentTimerValSynchLong==(2*NumSynchMeasAvgAux) and HardwareSynchStatus==false){
-			cout << "Hardware synchronized, now proceeding with the network synchronization managed by hosts..." << endl;
-			// Update HardwareSynchStatus			
-			this->acquire();// Very critical to not produce measurement deviations when assessing the periodic snchronization
-			HardwareSynchStatus=true;
-			this->release();			
-		}
-	}// end while
-
-	}
-      catch (const std::exception& e) {
-	// Handle the exception
-      	this->release();
-      	cout << "GPIO::PRUsignalTimerSynchJitterLessInterrupt Exception: " << e.what() << endl;
-      }
-
-return 0; // All ok
-}
-
-int GPIO::PIDcontrolerTimeJiterlessInterrupt(){// Not used
-//PRUoffsetDriftErrorDerivative=(PRUoffsetDriftErrorAvg-PRUoffsetDriftErrorLast);//*(static_cast<double>(iIterPRUcurrentTimerVal-iIterPRUcurrentTimerValLast));//*(static_cast<double>(this->TimePRU1synchPeriod)/static_cast<double>(PRUclockStepPeriodNanoseconds)));
-//PRUoffsetDriftErrorIntegral=PRUoffsetDriftErrorIntegral+PRUoffsetDriftErrorAvg;//*static_cast<double>(iIterPRUcurrentTimerVal-iIterPRUcurrentTimerValLast);//*(static_cast<double>(this->TimePRU1synchPeriod)/static_cast<double>(PRUclockStepPeriodNanoseconds));
-
-	this->PRUoffsetDriftErrorAppliedRaw=PRUoffsetDriftErrorAvg;
-
-if (this->PRUoffsetDriftErrorAppliedRaw<(-this->LostCounts)){this->PRUoffsetDriftErrorApplied=this->PRUoffsetDriftErrorAppliedRaw-LostCounts;}// The LostCounts is to compensate the lost counts in the PRU when applying the update
-else if(this->PRUoffsetDriftErrorAppliedRaw>this->LostCounts){this->PRUoffsetDriftErrorApplied=this->PRUoffsetDriftErrorAppliedRaw+LostCounts;}// The LostCounts is to compensate the lost counts in the PRU when applying the update
-else{this->PRUoffsetDriftErrorApplied=0;}
-
-return 0; // All ok
-}
-
 int GPIO::ReadTimeStamps(int iIterRunsAux,int QuadEmitDetecSelecAux, double SynchTrigPeriodAux,unsigned int NumQuBitsPerRunAux, double* FineSynchAdjValAux, unsigned long long int QPLAFutureTimePointNumber, bool QPLAFlagTestSynchAux){// Read the detected timestaps in four channels
 /////////////
+	/*
 	try{
 	this->QPLAFlagTestSynch=QPLAFlagTestSynchAux;
 	SynchTrigPeriod=SynchTrigPeriodAux;// Histogram/Period value
@@ -731,30 +311,7 @@ int GPIO::ReadTimeStamps(int iIterRunsAux,int QuadEmitDetecSelecAux, double Sync
 	pru0dataMem_int[2]=static_cast<unsigned int>(this->GuardPeriod);// Indicate guard period of the sequence signal, so that it falls correctly and it is picked up by the Signal PRU. Link between system clock and PRU clock. It has to be a power of 2
 	pru0dataMem_int[1]=static_cast<unsigned int>(this->NumQuBitsPerRun); // set number captures
 	// Different modes of periodic correction
-	//switch (QuadEmitDetecSelecGPIO){
-	//	case 1: {this->QPLAFutureTimePointOld=this->QPLAFutureTimePointOld1;break;}
-	//	case 2: {this->QPLAFutureTimePointOld=this->QPLAFutureTimePointOld2;break;}
-	//	case 3: {this->QPLAFutureTimePointOld=this->QPLAFutureTimePointOld3;break;}
-	//	case 4: {this->QPLAFutureTimePointOld=this->QPLAFutureTimePointOld4;break;}
-	//	case 5: {this->QPLAFutureTimePointOld=this->QPLAFutureTimePointOld5;break;}
-	//	case 6: {this->QPLAFutureTimePointOld=this->QPLAFutureTimePointOld6;break;}
-	//	case 7: {this->QPLAFutureTimePointOld=this->QPLAFutureTimePointOld7;break;}
-	//	default: {break;}
-	//}
-	// There is an intrinsic limitation estimating PRUoffsetDriftErrorAbsAvg, which is impaired by the time jitter of handling the interrupt to check the curren tPRU clock.
-	// At some point, it could be that the PRU clock is more stable than this jitter (even more so if SyncE synchronizaed the clocks).
-	// Then, for the triggering of the signals, it is better to truncate this value to a sub multiple of the SynchTrigPeriod; and let the qubits handle the time offset synchronization from this point onwards
-	// The qubits continuously correct for the time offset difference due to the QPLA function (SmallDriftContinuousCorrection) that after each masurements send to the sender the correction estimated to the time offfseet
-	// With godd enough hardware clocks, the jitter is limited by the BBB kernel determinisms, in the order of 5us. With hundreds of averaging it is reduced this jitter around 10 times (since it scales as sqrt(NumberAveraging))
-	// Therefore, the truncation could be a submultiple of SynchTrigPeriod which is slightly larger than the averaged interrupt jitter (around 500ns, which in PRU units would be 100)
-	// Better to be a number multiple of power of 2 and larger than this minim jitter PRU value
-	//if (PRUoffsetDriftErrorAbsAvg<0.0){
-	//	truncatedPRUoffsetDriftErrorAbsAvg=-round((-PRUoffsetDriftErrorAbsAvg)/truncatedSynchTrigPeriod)*truncatedSynchTrigPeriod;
-	//}
-	//else{
-	//	truncatedPRUoffsetDriftErrorAbsAvg=round((PRUoffsetDriftErrorAbsAvg)/truncatedSynchTrigPeriod)*truncatedSynchTrigPeriod;
-	//}
-	// Version where PTP control plane tries to dominate the timing (not good idea)
+	
 	// Smart version of the truncation - avoid being at the border of transition
 	if (SynchPlaneDomainMode==true){
 		if (abs(PRUoffsetDriftErrorAbsAvg-PRUoffsetDriftErrorAbsAvgOldTruncatedRecv)>truncatedSynchTrigPeriod){
@@ -798,17 +355,6 @@ int GPIO::ReadTimeStamps(int iIterRunsAux,int QuadEmitDetecSelecAux, double Sync
 		}
 		default:{PRUoffFreqTotalAux=0.0;break;}// None time nor frequency correction
 	}
-	
-	//switch (QuadEmitDetecSelecGPIO){// Update value	
-	//	case 1: {this->QPLAFutureTimePointOld1=this->QPLAFutureTimePoint;break;}
-	//	case 2: {this->QPLAFutureTimePointOld2=this->QPLAFutureTimePoint;break;}
-	//	case 3: {this->QPLAFutureTimePointOld3=this->QPLAFutureTimePoint;break;}
-	//	case 4: {this->QPLAFutureTimePointOld4=this->QPLAFutureTimePoint;break;}
-	//	case 5: {this->QPLAFutureTimePointOld5=this->QPLAFutureTimePoint;break;}
-	//	case 6: {this->QPLAFutureTimePointOld6=this->QPLAFutureTimePoint;break;}
-	//	case 7: {this->QPLAFutureTimePointOld7=this->QPLAFutureTimePoint;break;}
-	//	default: {this->QPLAFutureTimePointOld=this->QPLAFutureTimePoint;break;}
-	//}
 	
 	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	// Now, The time in PRU units to consider (as an approximation) for correction with relative frequency correction is composed of the effective period, and the period
@@ -866,22 +412,6 @@ int GPIO::ReadTimeStamps(int iIterRunsAux,int QuadEmitDetecSelecAux, double Sync
 	//  PRU long execution making sure that notification interrupts do not overlap
 	retInterruptsPRU0=prussdrv_pru_wait_event_timeout(PRU_EVTOUT_0,WaitTimeInterruptPRU0);
 
-	/*
-	//cout << "dPRUoffsetDriftErrorAvg: " << dPRUoffsetDriftErrorAvg << endl;
-	//cout << "AccumulatedErrorDrift: " << AccumulatedErrorDrift << endl;
-	cout << "AccumulatedErrorDriftAux: " << AccumulatedErrorDriftAux << endl;
-	cout << "PRUoffsetDriftErrorAvg: " << PRUoffsetDriftErrorAvg << endl;
-	cout << "PRUoffsetDriftErrorAbsAvg: " << PRUoffsetDriftErrorAbsAvg << endl;
-	cout << "PRUoffsetDriftErrorAbsAvgAux: " << PRUoffsetDriftErrorAbsAvgAux << endl;
-	cout << "SynchTrigPeriod: " << SynchTrigPeriod << endl;
-	cout << "InstantCorr: " << InstantCorr << endl;
-	////cout << "RecurrentAuxTime: " << RecurrentAuxTime << endl;
-	//cout << "pru0dataMem_int3aux: " << pru0dataMem_int3aux << endl;
-	////cout << "SynchRem: " << SynchRem << endl;
-	cout << "this->AdjPulseSynchCoeffAverage: " << this->AdjPulseSynchCoeffAverage << endl;
-	cout << "this->duration_FinalInitialMeasTrigAuxAvg: " << this->duration_FinalInitialMeasTrigAuxAvg << endl;
-	*/
-
 	//cout << "retInterruptsPRU0: " << retInterruptsPRU0 << endl;
 	if (retInterruptsPRU0>0){
 		prussdrv_pru_clear_event(PRU_EVTOUT_0, PRU0_ARM_INTERRUPT);// So it has time to clear the interrupt for the later iterations
@@ -911,10 +441,12 @@ int GPIO::ReadTimeStamps(int iIterRunsAux,int QuadEmitDetecSelecAux, double Sync
       	this->release();
       	cout << "GPIO::ReadTimeStamps Exception: " << e.what() << endl;
      }
+    */
 return 0;// all ok
 }
 
 int GPIO::SendTriggerSignals(int QuadEmitDetecSelecAux, double SynchTrigPeriodAux,unsigned int NumberRepetitionsSignalAux,double* FineSynchAdjValAux,unsigned long long int QPLAFutureTimePointNumber, bool QPLAFlagTestSynchAux){ // Uses output pins to clock subsystems physically generating qubits or entangled qubits
+	/*
 	try{
 	this->QPLAFlagTestSynch=QPLAFlagTestSynchAux;
 	SynchTrigPeriod=SynchTrigPeriodAux;// Histogram/Period value
@@ -1113,23 +645,6 @@ int GPIO::SendTriggerSignals(int QuadEmitDetecSelecAux, double SynchTrigPeriodAu
 	//  PRU long execution making sure that notification interrupts do not overlap
 	retInterruptsPRU1=prussdrv_pru_wait_event_timeout(PRU_EVTOUT_1,WaitTimeInterruptPRU1);
 
-	/*
-	//cout << "ldPRUoffsetDriftErrorAvg: " << ldPRUoffsetDriftErrorAvg << endl;
-	//cout << "dPRUoffsetDriftErrorAvg: " << dPRUoffsetDriftErrorAvg << endl;
-	cout << "AccumulatedErrorDrift: " << AccumulatedErrorDrift << endl;
-	cout << "AccumulatedErrorDriftAux: " << AccumulatedErrorDriftAux << endl;
-	cout << "PRUoffsetDriftErrorAvg: " << PRUoffsetDriftErrorAvg << endl;
-	cout << "PRUoffsetDriftErrorAbsAvg: " << PRUoffsetDriftErrorAbsAvg << endl;
-	cout << "PRUoffsetDriftErrorAbsAvgAux: " << PRUoffsetDriftErrorAbsAvgAux << endl;	
-	cout << "SynchTrigPeriod: " << SynchTrigPeriod << endl;
-	cout << "InstantCorr: " << InstantCorr << endl;
-	////cout << "RecurrentAuxTime: " << RecurrentAuxTime << endl;
-	//cout << "pru1dataMem_int2aux: " << pru1dataMem_int2aux << endl;
-	////cout << "SynchRem: " << SynchRem << endl;
-	cout << "this->AdjPulseSynchCoeffAverage: " << this->AdjPulseSynchCoeffAverage << endl;
-	cout << "this->duration_FinalInitialMeasTrigAuxAvg: " << this->duration_FinalInitialMeasTrigAuxAvg << endl;
-	*/
-
 	//cout << "SendTriggerSignals: retInterruptsPRU1: " << retInterruptsPRU1 << endl;
 	if (retInterruptsPRU1>0){
 		prussdrv_pru_clear_event(PRU_EVTOUT_1, PRU1_ARM_INTERRUPT);// So it has time to clear the interrupt for the later iterations
@@ -1153,38 +668,12 @@ int GPIO::SendTriggerSignals(int QuadEmitDetecSelecAux, double SynchTrigPeriodAu
       	this->release();
       	cout << "GPIO::SendTriggerSignals Exception: " << e.what() << endl;
      }
-
+*/
 return 0;// all ok	
 }
 
-int GPIO::SendEmulateQubits(){ // Emulates sending 2 entangled qubits through the 8 output pins (each qubits needs 4 pins)
-
-return 0;// all ok
-}
-
-int GPIO::SetSynchDriftParams(double* AccumulatedErrorDriftParamsAux){// Not Used
-	this->acquire();
-	// Make it iterative algorithm
-	AccumulatedErrorDrift=AccumulatedErrorDrift+static_cast<long double>(AccumulatedErrorDriftParamsAux[0]); // For retrieved relative frequency difference from protocol
-	AccumulatedErrorDriftAux=AccumulatedErrorDriftAux+static_cast<long double>(AccumulatedErrorDriftParamsAux[1]);// For retrieved relative offset difference from protocol
-	//cout << "AccumulatedErrorDrift: " << AccumulatedErrorDrift << endl;
-	//cout << "AccumulatedErrorDriftAux: " << AccumulatedErrorDriftAux << endl;
-	this->release();
-	return 0; // All Ok
-	}
-
-	bool GPIO::GetHardwareSynchStatus(){// Provide information to the above agents
-	bool HardwareSynchStatusAux=false;
-	this->acquire();
-	HardwareSynchStatusAux=HardwareSynchStatus;
-	this->release();
-return HardwareSynchStatusAux; // All Ok
-}
-
-//PRU0 - Operation - getting iputs
-
 int GPIO::DDRdumpdata(int iIterRunsAux){
-//cout << "GPIO::Reading timetags" << endl;
+/*//cout << "GPIO::Reading timetags" << endl;
 // Reading data from PRU shared and own RAMs
 //DDR_regaddr = (short unsigned int*)ddrMem + OFFSET_DDR;
 valp=valpHolder; // Coincides with SHARED in PRUassTaggDetSimpleScript.p
@@ -1241,38 +730,7 @@ unsigned int valCycleCountPRUAux2;
 CurrentiIterDump=0;
 int CurrentiIterDumpAux=0;
 bool ValidTag=false;
-unsigned short ValidTagMask=0;
-switch (QuadEmitDetecSelecGPIO){// Once bits are re-ordered, make sure to keep only the channels of interest
-	case 7:{			
-		ValidTagMask=0x0FFF;
-		break;
-	}
-	case 6:{			
-		ValidTagMask=0x0FF0;
-		break;
-	}
-	case 5:{		
-		ValidTagMask=0x0F0F;
-		break;
-	}
-	case 4:{			
-		ValidTagMask=0x0F00;
-		break;
-	}
-	case 3:{			
-		ValidTagMask=0x00FF;
-		break;
-	}
-	case 2:{
-		ValidTagMask=0x00F0;
-		break;
-	}
-	case 1:{
-		ValidTagMask=0x000F;
-		break;
-	}
-	default:{ValidTagMask=0x0000;break;}// None time nor frequency correction
-}
+
 extendedCounterPRUholder=1;// Re-initialize at each run. 1 so that at least the first is checked and stored
 extendedCounterPRUholderOld=0;// Re-initialize at each run
 int TotalCurrentNumRecordsOld=TotalCurrentNumRecords;
@@ -1300,7 +758,6 @@ while (CurrentiIterDumpAux<NumQuBitsPerRun and extendedCounterPRUholder>extended
 	TimeTaggsStored[TotalCurrentNumRecords]=static_cast<unsigned long long int>(static_cast<long long int>(extendedCounterPRUholder)-LLIOldLastTimeTagg)+TimeTaggsLast;	// The fist OldLastTimeTagg and TimeTaggsLast of the iteration is compensated for with the calibration tag together with the accumulated synchronization error	    
 	//////////////////////////////////////////////////////////////		
 	// When unsigned short
-	ChannelTagsStored[TotalCurrentNumRecords]=this->packBits(static_cast<unsigned short>(*valp)); // we're just interested in 12 bits which we have to re-order
 	valp++;// 1 times 16 bits
 	// Check that it belong to a channel of interest
 	//cout << "GPIO::ChannelTagsStored[TotalCurrentNumRecords]: " << ChannelTagsStored[TotalCurrentNumRecords] << endl;
@@ -1329,455 +786,8 @@ sharedMem_int[OFFSET_SHAREDRAM+1]=static_cast<unsigned int>(0x00000000); // Put 
 this->ManualSemaphore=false;
 this->ManualSemaphoreExtra=false;
 this->release();
-/////////////////////////////////////////////////////////////////////////
-// Debbugin relative frequency difference
-//cout << "GPIO::DDRdumpdata AdjPulseSynchCoeffAverage: " << AdjPulseSynchCoeffAverage << endl;
-//////////////////////////////////////////////////////////////////////////
-// Notify lost of track of counts due to timer overflow - Not really used
-//if (this->FirstTimeDDRdumpdata or this->valThresholdResetCounts==0){this->AfterCountsThreshold=24+5;}// First time the Threshold reset counts of the timetagg is not well computed, hence estimated as the common value
-//else{this->AfterCountsThreshold=this->valThresholdResetCounts+5;};// Related to the number of instruciton counts after the last read of the counter. It is a parameter to adjust
-/*this->AfterCountsThreshold=24+5;
-this->FirstTimeDDRdumpdata=false;
-if(valCycleCountPRU >= (0xFFFFFFFF-this->AfterCountsThreshold)){// The counts that we will lose because of the reset
-	cout << "We have lost ttg counts! Lost of tags accuracy! Reduce the number of tags per run, and if needed increase the runs number." << endl;
-	cout << "AfterCountsThreshold: " << AfterCountsThreshold << endl;
-	cout << "valCycleCountPRU: " << valCycleCountPRU << endl;
-}*/
-//else if (valCycleCountPRU > (0x80000000-this->AfterCountsThreshold)){// The exceeded counts, remove them
-//this->valCarryOnCycleCountPRU=this->valCarryOnCycleCountPRU-(AboveThresoldCycleCountPRUCompValue-1)*static_cast<unsigned long long int>((this->AfterCountsThreshold+valCycleCountPRU)-0x80000000);
-////cout << "this->valCarryOnCycleCountPRU: " << this->valCarryOnCycleCountPRU << endl;
-//}
-//cout << "sharedMem_int: " << sharedMem_int << endl;
-////////////////////////////////////////////
-// Checks of proper values handling
-//long long int CheckValueAux=(static_cast<long long int>(SynchTrigPeriod/2.0)+static_cast<long long int>(TimeTaggsStored[0]))%static_cast<long long int>(SynchTrigPeriod)-static_cast<long long int>(SynchTrigPeriod/2.0);
-//cout << "GPIO::DDRdumpdata::CheckValueAux: "<< CheckValueAux << endl;
-//cout << "GPIO::DDRdumpdata::SynchTrigPeriod: " << SynchTrigPeriod << endl;
-//cout << "GPIO::DDRdumpdata::NumQuBitsPerRun: " << NumQuBitsPerRun << endl;
-///////////////////////////////////////////////
-// Check that TimeTaggsStored are increasingly ordered. This can be commented, it is just for checking
-//
-//for (int i=0;i<(CurrentiIterDump-1);i++){
-//	if ((static_cast<long long int>(TimeTaggsStored[i+1])-static_cast<long long int>(TimeTaggsStored[i]))<=0){
-//		cout << "GPIO::DDRdumpdata disorded tags before PRUdetCorrRelFreq!!!" << endl;
-//	}
-//}
-///////////////////////////////////////////////
-// Correct the detected qubits relative frequency difference (due to the sender node) and split between quad groups of 4 channels. Computed at each iteration so that the time span is not too large
-PRUdetCorrRelFreq(iIterRunsAux,CurrentiIterDump);
-
-///////////////////////////////////////////////
-// Check that TimeTaggsStored are increasingly ordered. This can be commented, it is just for checking
-// TimeTaggsStored will be disordered
-//for (int i=0;i<(CurrentiIterDump-1);i++){
-//	if ((static_cast<long long int>(TimeTaggsStored[i+1])-static_cast<long long int>(TimeTaggsStored[i]))<=0){
-//		cout << "GPIO::DDRdumpdata disorded tags after PRUdetCorrRelFreq!!!" << endl;
-//	}
-//}
-//
-//bool CheckOnceAux=false; //bool CheckOnceAux=false; 
-//for (int iQuadChIter=0;iQuadChIter<QuadNumChGroups;iQuadChIter++){
-//	CheckOnceAux=false;
-//	if (TotalCurrentNumRecordsQuadCh[iQuadChIter]>1){
-//		for (unsigned int i=0;i<(TotalCurrentNumRecordsQuadCh[iQuadChIter]-1);i++){		
-//			if ((static_cast<long long int>(TimeTaggsSplitted[iQuadChIter][i+1])-static_cast<long long int>(TimeTaggsSplitted[iQuadChIter][i]))<=0){
-//				CheckOnceAux=true;
-//			}
-//		}
-//	}
-//	if (CheckOnceAux==true){
-//		cout << "GPIO::DDRdumpdata disorded TimeTaggsSplitted!!! for iQuadChIter: " << iQuadChIter << endl;
-//	}
-//}
-///////////////////////////////////////////////
-
-if (SlowMemoryPermanentStorageFlag==true){ // We save into file the relative frequency corrected info (so it might be time disorded for different QuadNumChGroups)
-	// Reading TimeTaggs
-	if (streamDDRpru.is_open()){	        
-		if (iIterRunsAux==0){
-			streamDDRpru.clear(); // will reset these state flags, allowing you to continue using the stream for additional I/O operations
-			streamDDRpru.write(reinterpret_cast<const char*>(&TimeTaggsLast), sizeof(TimeTaggsLast));// Store this reference value
-		}
-		for (iIterDump=0; iIterDump<CurrentiIterDump; iIterDump++){
-			streamDDRpru.clear(); // will reset these state flags, allowing you to continue using the stream for additional I/O operations
-			streamDDRpru.write(reinterpret_cast<const char*>(&TimeTaggsStored[iIterDump]), sizeof(TimeTaggsStored[iIterDump]));
-			streamDDRpru.clear(); // will reset these state flags, allowing you to continue using the stream for additional I/O operations
-			streamDDRpru.write(reinterpret_cast<const char*>(&ChannelTagsStored[iIterDump]), sizeof(ChannelTagsStored[iIterDump]));
-			//streamDDRpru << extendedCounterPRU << valBitsInterest << endl;
-		}
-	}
-	else{
-		cout << "GPIO::DDRdumpdata streamDDRpru is not open!" << endl;
-	}
-}
-
+*/
 return 0; // all ok
-}
-
-int GPIO::PRUdetCorrRelFreq(int iIterRunsAux,int CurrentiIterDump){// Correct relative frequency difference due to the sender. It is very dangerous if not well estimated. Actually, it is better to estiamte it by hardware means having a clock derived froma synchronized network system like synchronous ethernet
-// Separate the detection by quad channels and do the processing independently
-	int CurrentiIterDumpAux=0;
-	// First (reset)compute the number of detections per quad channel
-	if (iIterRunsAux==0){ // Reset values
-		for (int iQuadChIter=0;iQuadChIter<QuadNumChGroups;iQuadChIter++){
-			TotalCurrentNumRecordsQuadCh[iQuadChIter]=0;
-			TotalCurrentNumRecordsQuadChOld[iQuadChIter]=0;
-		}
-	}
-	else{// Update old values
-		for (int iQuadChIter=0;iQuadChIter<QuadNumChGroups;iQuadChIter++){
-			TotalCurrentNumRecordsQuadChOld[iQuadChIter]=TotalCurrentNumRecordsQuadCh[iQuadChIter];
-		}
-	}
-	// The separate the raw timetagging detection for each quad channel (since it quad channel will have to correct for a different relative frequency difference)
-	for (int i=0;i<CurrentiIterDump;i++){
-		for (unsigned short iQuadChIter=0;iQuadChIter<QuadNumChGroups;iQuadChIter++){
-			if ((ChannelTagsStored[i]&(0x000F<<(4*iQuadChIter)))>0){  
-				TimeTaggsSplitted[iQuadChIter][TotalCurrentNumRecordsQuadCh[iQuadChIter]]=TimeTaggsStored[i];
-				ChannelTagsSplitted[iQuadChIter][TotalCurrentNumRecordsQuadCh[iQuadChIter]]=ChannelTagsStored[i]&(0x000F<<(4*iQuadChIter));
-				TotalCurrentNumRecordsQuadCh[iQuadChIter]++;
-			}
-		}
-	}
-	for (int iQuadChIter=0;iQuadChIter<QuadNumChGroups;iQuadChIter++){
-		//int iQuadChIter=QuadEmitDetecSelecGPIO;// Only process the expected channel group
-		TotalCurrentNumRecordsQuadChNewOldAux=TotalCurrentNumRecordsQuadCh[iQuadChIter]-TotalCurrentNumRecordsQuadChOld[iQuadChIter];
-		//////////////////////////////////////////////////////////////////////////
-		// Check. It can be commented for normal operation
-		//cout << "GPIO::PRUdetCorrRelFreq TotalCurrentNumRecordsQuadChNewOldAux: " << TotalCurrentNumRecordsQuadChNewOldAux << endl;
-		//bool CheckOnceAux=false;
-		//if (TotalCurrentNumRecordsQuadChNewOldAux>1){
-		//	for (int i=0;i<(TotalCurrentNumRecordsQuadChNewOldAux-1);i++){		
-		//		if ((static_cast<long long int>(TimeTaggsSplitted[iQuadChIter][i+1])-static_cast<long long int>(TimeTaggsSplitted[iQuadChIter][i]))<=0){
-		//			CheckOnceAux=true;
-		//		}
-		//	}
-		//	if (CheckOnceAux==true){
-		//		cout << "GPIO::PRUdetCorrRelFreq disorded TimeTaggsSplitted before processing!!! for iQuadChIter: " << iQuadChIter << endl;
-		//	}
-		//}
-		/////////////////////////////////////////////////////////////////////////
-		//cout << "GPIO::PRUdetCorrRelFreq iQuadChIter: " << iQuadChIter << endl;
-		//cout << "GPIO::PRUdetCorrRelFreq TotalCurrentNumRecordsQuadChNewOldAux: " << TotalCurrentNumRecordsQuadChNewOldAux << endl;
-		if (TotalCurrentNumRecordsQuadChNewOldAux>TagsSeparationDetRelFreq and GPIOFlagRelFreqTest==false){
-			// Good strategy to substrat the system absolute time which is multiple to the effective period, since we want to see the deviation with respect this reference values
-    		long long int LLIInitialTimeTaggs=static_cast<long long int>(TimeTaggsLast);//static_cast<long long int>(TimeTaggs[iQuadChIter][0]);
-    		//cout << "GPIO::LastTimeTaggRef[0]: " << LastTimeTaggRef[0] << endl;
-    		//cout << "GPIO::TimeTaggs[iQuadChIter][0]: " << TimeTaggs[iQuadChIter][0] << endl;
-    		long long int LLITimeTaggs[TotalCurrentNumRecordsQuadChNewOldAux]={0};
-    		for (unsigned int i=0;i<TotalCurrentNumRecordsQuadChNewOldAux;i++){
-    			LLITimeTaggs[i]=static_cast<long long int>(TimeTaggsSplitted[iQuadChIter][i+TotalCurrentNumRecordsQuadChOld[iQuadChIter]])-LLIInitialTimeTaggs;
-    		}
-    		double SlopeDetTagsAux=1.0;
-    		long long int InterDetTagsAux=0;
-		    // Calculate the "x" values
-    		long long int xAux[TotalCurrentNumRecordsQuadChNewOldAux]={0};
-    		long long int InterDetTagsAuxArray[TotalCurrentNumRecordsQuadChNewOldAux]={0};
-    		long long int LLISynchTrigPeriod=static_cast<long long int>(SynchTrigPeriod);
-    		long long int LLISynchTrigPeriodHalf=static_cast<long long int>(SynchTrigPeriod/2.0);
-    		long long int LLIMultFactorEffSynchPeriod=static_cast<long long int>(MultFactorEffSynchPeriod);
-    		for (unsigned int i=0;i<TotalCurrentNumRecordsQuadChNewOldAux;i++){
-    			// Absolute slope calculation & intercept point
-    			xAux[i]=((LLITimeTaggs[i]+LLISynchTrigPeriodHalf)/LLISynchTrigPeriod)*LLISynchTrigPeriod;// Important to consider from -Period/2 to Period/2 fall in the specific x bin
-    			// Relative slope calculation
-    			//if (i==0){
-    			//	xAux[i]=((LLITimeTaggs[i]+LLISynchTrigPeriodHalf)/LLISynchTrigPeriod)*LLISynchTrigPeriod;// Important to consider from -Period/2 to Period/2 fall in the specific x bin
-    			//}
-    			//else{
-    			//	xAux[i]=LLITimeTaggs[i-1]+(((LLITimeTaggs[i]-LLITimeTaggs[i-1])+LLISynchTrigPeriodHalf)/LLISynchTrigPeriod)*LLISynchTrigPeriod;// Important to consider from -Period/2 to Period/2 fall in the specific x bin
-    			//}
-    			// Intercept point; it is like the offset to be retrieved and it should not consider the histogram period if needed
-    			//InterDetTagsAuxArray[i]=((LLISynchTrigPeriodHalf)+LLITimeTaggs[i])%(LLISynchTrigPeriod)-(LLISynchTrigPeriodHalf);
-    			//InterDetTagsAuxArray[i]=(LLITimeTaggs[i])%(LLISynchTrigPeriod); // Used in the adaptive approach. It is like 
-    		}
-
-    		//InterDetTagsAux=LLIMedianFilterSubArray(InterDetTagsAuxArray,static_cast<int>(TotalCurrentNumRecordsQuadChNewOldAux));//LLIMeanFilterSubArray(InterDetTagsAuxArray,static_cast<int>(TotalCurrentNumRecordsQuadChNewOldAux))
-		    //cout << "GPIO::PRUdetCorrRelFreq InterDetTagsAux original iQuadChIter[" << iQuadChIter << "]: " << InterDetTagsAux << endl;
-
-		    // Compute the absolute candidate slope
-    		int iAux=0;
-    		for (unsigned int i=0;i<(TotalCurrentNumRecordsQuadChNewOldAux-TagsSeparationDetRelFreq);i++){
-    			if ((xAux[i+TagsSeparationDetRelFreq]-xAux[i])>0){
-    				// Relative slope calculation
-    				SlopeDetTagsAuxArray[iAux]=static_cast<double>(LLITimeTaggs[i+TagsSeparationDetRelFreq]-LLITimeTaggs[i])/static_cast<double>(xAux[i+TagsSeparationDetRelFreq]-xAux[i]);
-    				iAux++;
-    			}
-    			//if (xAux[i]>0){//if ((xAux[i+TagsSeparationDetRelFreq]-xAux[i])>0){
-    			//	// Absolute slope calculation
-    			//	//SlopeDetTagsAuxArray[iAux]=static_cast<double>(LLITimeTaggs[i]-InterDetTagsAux)/static_cast<double>(xAux[i]);
-    			//	iAux++;
-    			//}
-    		}
-
-    		// Absolute slope calculation
-    		SlopeDetTagsAux=DoubleMedianFilterSubArray(SlopeDetTagsAuxArray,iAux);//DoubleMeanFilterSubArray(SlopeDetTagsAuxArray,iAux);
-		    //SlopeDetTagsAux=1.0;// For the time being set to 1. 
-		    //cout << "GPIO::PRUdetCorrRelFreq SlopeDetTagsAux original iQuadChIter[" << iQuadChIter << "]: " << SlopeDetTagsAux << endl;
-
-    		if (SlopeDetTagsAux<0.9 or SlopeDetTagsAux>1.1){
-    			cout << "GPIO::PRUdetCorrRelFreq wrong computation of the SlopeDetTagsAux " << SlopeDetTagsAux << " for quad channel " << iQuadChIter << ". Not applying the correction..." << endl;
-    			SlopeDetTagsAux=1.0;
-    		}
-    		for (unsigned int i=0;i<TotalCurrentNumRecordsQuadChNewOldAux;i++){
-    			TimeTaggsSplitted[iQuadChIter][i+TotalCurrentNumRecordsQuadChOld[iQuadChIter]]=static_cast<unsigned long long int>(static_cast<long long int>(static_cast<long double>(1.0/SlopeDetTagsAux)*static_cast<long double>(LLITimeTaggs[i]))+LLIInitialTimeTaggs);
-    		}
-    		
-    		//cout << "GPIO::PRUdetCorrRelFreq SlopeDetTagsAux " << SlopeDetTagsAux << " for quad channel " << iQuadChIter << endl;
-		    /*
-		    // Relative slope calculation
-		    double SlopeDetTagsAuxArrayAdap[TagsSeparationDetRelFreqAdpSlope]={0.0};
-    		for (unsigned int i=0;i<TotalCurrentNumRecordsQuadChNewOldAux;i++){
-    			// Non-adaptive slope
-    			//TimeTaggsSplitted[iQuadChIter][i+TotalCurrentNumRecordsQuadChOld[iQuadChIter]]=static_cast<unsigned long long int>(static_cast<long long int>(static_cast<long double>(1.0/SlopeDetTagsAux)*static_cast<long double>(LLITimeTaggs[i]))+LLIInitialTimeTaggs);
-    			// Applying adaptive slope
-    			if (i<(TagsSeparationDetRelFreqAdpSlope/2)){
-    				for (unsigned int iAdapAux=0;iAdapAux<TagsSeparationDetRelFreqAdpSlope;iAdapAux++){
-	    				SlopeDetTagsAuxArrayAdap[static_cast<int>(iAdapAux)]=SlopeDetTagsAuxArray[iAdapAux];    				
-	    			}
-    			}
-    			else if (i>=(TagsSeparationDetRelFreqAdpSlope/2) and (i+TagsSeparationDetRelFreqAdpSlope/2)<TotalCurrentNumRecordsQuadChNewOldAux){
-	    			for (unsigned int iAdapAux=static_cast<unsigned int>(static_cast<int>(i)-static_cast<int>(TagsSeparationDetRelFreqAdpSlope/2));iAdapAux<(i+TagsSeparationDetRelFreqAdpSlope/2);iAdapAux++){
-	    				SlopeDetTagsAuxArrayAdap[static_cast<int>(iAdapAux)-(static_cast<int>(i)-static_cast<int>(TagsSeparationDetRelFreqAdpSlope/2))]=SlopeDetTagsAuxArray[iAdapAux];    				
-	    			}	    			
-	    		}
-	    		else{
-	    			for (unsigned int iAdapAux=static_cast<unsigned int>(static_cast<int>(TotalCurrentNumRecordsQuadChNewOldAux)-static_cast<int>(TagsSeparationDetRelFreqAdpSlope));iAdapAux<TotalCurrentNumRecordsQuadChNewOldAux;iAdapAux++){
-	    				SlopeDetTagsAuxArrayAdap[static_cast<int>(iAdapAux)-(static_cast<int>(TotalCurrentNumRecordsQuadChNewOldAux)-static_cast<int>(TagsSeparationDetRelFreqAdpSlope))]=SlopeDetTagsAuxArray[iAdapAux];    				
-	    			}
-	    		}
-    			SlopeDetTagsAux=1.0;// For the time being set to 1. DoubleMedianFilterSubArray(SlopeDetTagsAuxArrayAdap,static_cast<int>(TagsSeparationDetRelFreqAdpSlope));//DoubleMeanFilterSubArray(SlopeDetTagsAuxArrayAdap,static_cast<int>(TagsSeparationDetRelFreqAdpSlope));
-    			//if (i%75==0){// To be commented when not being check
-    			//	cout << "GPIO::PRUdetCorrRelFreq SlopeDetTagsAux i[" << i << "] current adaptive: " << SlopeDetTagsAux << endl;
-    			//}
-    			if (SlopeDetTagsAux<0.5 or SlopeDetTagsAux>1.5){
-	    			cout << "GPIO::PRUdetCorrRelFreq wrong computation of the adaptive SlopeDetTagsAux " << SlopeDetTagsAux << " for quad channel " << iQuadChIter << ". Not applying the correction..." << endl;
-	    			SlopeDetTagsAux=1.0;
-	    		}
-	    		// We have to put back the intercept value, so that the other algorithms in upper layers are aware of offsets to correct for synchronization
-    			TimeTaggsSplitted[iQuadChIter][i+TotalCurrentNumRecordsQuadChOld[iQuadChIter]]=static_cast<unsigned long long int>(static_cast<long long int>(static_cast<long double>(1.0/SlopeDetTagsAux)*static_cast<long double>(LLITimeTaggs[i]-InterDetTagsAux))+InterDetTagsAux+LLIInitialTimeTaggs);
-    			// Also update the information in the original array - Bad idea because they become disorded
-    			//TimeTaggsStored[CurrentiIterDumpAux]=TimeTaggsSplitted[iQuadChIter][i+TotalCurrentNumRecordsQuadChOld[iQuadChIter]]; 
-    			//ChannelTagsStored[CurrentiIterDumpAux]=ChannelTagsSplitted[iQuadChIter][i+TotalCurrentNumRecordsQuadChOld[iQuadChIter]];
-    			//CurrentiIterDumpAux++;// update value
-    		}*/
-
-		    //////////////////////////////////////////////////////////////////////////////////////////
-		    ////// Checks of proper relative frequency correction. It can be commented
-		    //LLIInitialTimeTaggs=static_cast<long long int>(TimeTaggsLast);//static_cast<long long int>(TimeTaggs[iQuadChIter][0]);
-    		////cout << "GPIO::LastTimeTaggRef[0]: " << LastTimeTaggRef[0] << endl;
-    		////cout << "GPIO::TimeTaggs[iQuadChIter][0]: " << TimeTaggs[iQuadChIter][0] << endl;
-    		//LLITimeTaggs[TotalCurrentNumRecordsQuadChNewOldAux]={0};
-    		//for (unsigned int i=0;i<TotalCurrentNumRecordsQuadChNewOldAux;i++){
-    		//	LLITimeTaggs[i]=static_cast<long long int>(TimeTaggsSplitted[iQuadChIter][i+TotalCurrentNumRecordsQuadChOld[iQuadChIter]])-LLIInitialTimeTaggs;
-    		//}
-    		//SlopeDetTagsAux=1.0;
-    		//
-		    //// Calculate the "x" values
-    		//xAux[TotalCurrentNumRecordsQuadChNewOldAux]={0};
-    		//LLISynchTrigPeriod=static_cast<long long int>(SynchTrigPeriod);
-    		//LLISynchTrigPeriodHalf=static_cast<long long int>(SynchTrigPeriod/2.0);
-    		//for (unsigned int i=0;i<TotalCurrentNumRecordsQuadChNewOldAux;i++){
-    		//	// Absolute calculation
-    		//	xAux[i]=((LLITimeTaggs[i]+LLISynchTrigPeriodHalf)/LLISynchTrigPeriod)*LLISynchTrigPeriod;// Important to consider from -Period/2 to Period/2 fall in the specific x bin    		
-    		//	//// Relative calculation
-    		//	//if (i==0){
-    		//	//	xAux[i]=((LLITimeTaggs[i]+LLISynchTrigPeriodHalf)/LLISynchTrigPeriod)*LLISynchTrigPeriod;// Important to consider from -Period/2 to Period/2 fall in the specific x bin
-    		//	//}
-    		//	//else{
-    		//	//	xAux[i]=LLITimeTaggs[i-1]+(((LLITimeTaggs[i]-LLITimeTaggs[i-1])+LLISynchTrigPeriodHalf)/LLISynchTrigPeriod)*LLISynchTrigPeriod;// Important to consider from -Period/2 to Period/2 fall in the specific x bin
-    		//	//}
-    		//	// Intercept point
-    		//	InterDetTagsAuxArray[i]=(LLISynchTrigPeriodHalf+LLITimeTaggs[i])%LLISynchTrigPeriod-LLISynchTrigPeriodHalf;
-    		//}
-    		//
-    		//InterDetTagsAux=LLIMeanFilterSubArray(InterDetTagsAuxArray,static_cast<int>(TotalCurrentNumRecordsQuadChNewOldAux));//LLIMedianFilterSubArray(InterDetTagsAuxArray,static_cast<int>(TotalCurrentNumRecordsQuadChNewOldAux))
-		    //cout << "GPIO::PRUdetCorrRelFreq InterDetTagsAux final iQuadChIter[" << iQuadChIter << "]: " << InterDetTagsAux << endl;
-    		//
-		    //// Compute the candidate slope
-    		//iAux=0;
-    		//for (unsigned int i=0;i<(TotalCurrentNumRecordsQuadChNewOldAux-TagsSeparationDetRelFreq);i++){
-    		//	if (xAux[i]>0){//if ((xAux[i+TagsSeparationDetRelFreq]-xAux[i])>0){
-    		//		// Absolute slope calculation
-    		//		SlopeDetTagsAuxArray[iAux]=static_cast<double>(LLITimeTaggs[i])/static_cast<double>(xAux[i]);
-    		//		// Relative slope calculation
-    		//		//SlopeDetTagsAuxArray[iAux]=static_cast<double>(LLITimeTaggs[i+TagsSeparationDetRelFreq]-LLITimeTaggs[i])/static_cast<double>(xAux[i+TagsSeparationDetRelFreq]-xAux[i]);
-    		//		iAux++;
-    		//	}
-    		//}
-    		//
-    		//SlopeDetTagsAux=DoubleMeanFilterSubArray(SlopeDetTagsAuxArray,iAux);//DoubleMedianFilterSubArray(SlopeDetTagsAuxArray,iAux);
-		    //cout << "GPIO::PRUdetCorrRelFreq SlopeDetTagsAux final iQuadChIter[" << iQuadChIter << "]: " << SlopeDetTagsAux << endl;
-		    //////////////////////////////////////////////////////////////////////////////////////////////////
-		}// if
-		else {//(TotalCurrentNumRecordsQuadChNewOldAux>0 or GPIOFlagRelFreqTest==true){
-			// It is a very dangerous function. Better to deactivate it. Also, not promp the user.
-			//if (TotalCurrentNumRecordsQuadChNewOldAux>0 and GPIOFlagRelFreqTest==false){cout << "GPIO::PRUdetCorrRelFreq not enough detections " << TotalCurrentNumRecordsQuadChNewOldAux << "<" << TagsSeparationDetRelFreq << " in iQuadChIter " << iQuadChIter << " quad channel to correct emitter rel. frequency deviation!" << endl;}
-			//else if (GPIOFlagRelFreqTest==true){cout << "GPIO::PRUdetCorrRelFreq deactivated..." << endl;}
-		}
-		//////////////////////////////////////////////////////////////////////////
-		// Check. It can be commented for normal operation
-		//CheckOnceAux=false; //bool CheckOnceAux=false;
-		//if (TotalCurrentNumRecordsQuadChNewOldAux>1){
-		//	for (int i=0;i<(TotalCurrentNumRecordsQuadChNewOldAux-1);i++){		
-		//		if ((static_cast<long long int>(TimeTaggsSplitted[iQuadChIter][i+1])-static_cast<long long int>(TimeTaggsSplitted[iQuadChIter][i]))<=0){
-		//			CheckOnceAux=true;
-		//		}
-		//	}
-		//	if (CheckOnceAux==true){
-		//		cout << "GPIO::PRUdetCorrRelFreq disorded TimeTaggsSplitted after processing!!! for iQuadChIter: " << iQuadChIter << endl;
-		//	}
-		//}
-		/////////////////////////////////////////////////////////////////////////
-	} // for
-//cout << "GPIO::PRUdetCorrRelFreq completed!" << endl;
-return 0; // All ok
-}
-
-// Function to pack bits 0, 1, 2, 3, 4, 5, 6, 7, 12, 13, 14, 15 of an unsigned short into the lower values
-unsigned short GPIO::packBits(unsigned short value) {
-    // Rearrange the lower two bytes so that they are correctly splitted for each quad group channel. For each group of 4 bits the order does not follow an arranged order for channel detectors
-    unsigned short byte0aux = ((value & 0x0010) >> 4) | ((value & 0x0040) >> 5) | ((value & 0x0002) << 1) | ((value & 0x0020) >> 2) ; // Channel 0 // Are the bits 0x0072, moved to 0x000F
-    unsigned short byte1aux = ((value & 0x8000) >> 11) | ((value & 0x0001) << 5) | ((value & 0x4000) >> 8) | ((value & 0x0004) << 5); // Channel 1 // Are the bits 0x0C05, moved to 0x00F0
-        
-    unsigned short byte2aux = value & 0x0000; //((value & 0x1000) >> 4) | ((value & 0x2000) >> 4) | ((value & 0x4000) >> 4) | ((value & 0x8000) >> 4); // Channel 2 // To be check that the ordering is correct!!!! // Byte 1 shifts to the right four bit positions (the interesting ones) // Are the bits 0xF000, moved to 0x0F00
-
-    // Debugging
-    //cout << "GPIO::packBits value: " << std::bitset<16>(value) << endl; // It tells the original position of the bits of interest to shift them in order to their places
-
-    if (byte2aux!=0){cout << "GPIO::packBits byte2aux has never been tested (check synchronization network ordering of bits)!!" << endl;} // Check the packBits byte2aux ordering as well as the mask in the PRUassTaggDetScriptSimple.p
-
-    // Combine the bytes into a single unsigned short
-    return byte0aux | byte1aux | byte2aux;
-}
-
-int GPIO::ClearStoredQuBits(){
-	if (SlowMemoryPermanentStorageFlag==true){
-	// Timetagging data
-		if (streamDDRpru.is_open()){
-			streamDDRpru.close();	
-		//streamDDRpru.clear(); // will reset these state flags, allowing you to continue using the stream for additional I/O operations
-		}
-
-	streamDDRpru.open(string(PRUdataPATH1) + string("TimetaggingData"), std::ios::binary | std::ios::in | std::ios::out | std::ios::trunc);// Open for write and read, and clears all previous content	
-	if (!streamDDRpru.is_open()) {
-		streamDDRpru.open(string(PRUdataPATH2) + string("TimetaggingData"), std::ios::binary | std::ios::in | std::ios::out | std::ios::trunc);// Open for write and read, and clears all previous content
-		if (!streamDDRpru.is_open()) {
-			cout << "Failed to re-open the streamDDRpru file." << endl;
-			return -1;
-		}
-	}
-	streamDDRpru.clear(); // will reset these state flags, allowing you to continue using the stream for additional I/O operations
-	streamDDRpru.seekp(0, std::ios::beg); // the put (writing) pointer back to the start!
-
-	//// Synch data
-	//if (streamSynchpru.is_open()){
-	//	streamSynchpru.close();	
-	//	//streamSynchpru.clear(); // will reset these state flags, allowing you to continue using the stream for additional I/O operations
-	//}
-	//
-	//streamSynchpru.open(string(PRUdataPATH1) + string("SynchTimetaggingData"), std::ios::binary | std::ios::in | std::ios::out | std::ios::trunc);// Open for write and read, and clears all previous content	
-	//if (!streamSynchpru.is_open()) {
-	//	streamSynchpru.open(string(PRUdataPATH2) + string("SynchTimetaggingData"), std::ios::binary | std::ios::in | std::ios::out | std::ios::trunc);// Open for write and read, and clears all previous content
-	//	if (!streamSynchpru.is_open()) {
-	//        	cout << "Failed to re-open the streamSynchpru file." << endl;
-	//        	return -1;
-	//        }
-	//}
-	//streamSynchpru.clear(); // will reset these state flags, allowing you to continue using the stream for additional I/O operations
-	//streamSynchpru.seekp(0, std::ios::beg); // the put (writing) pointer back to the start!
-}
-TotalCurrentNumRecords=0;
-
-return 0; // all ok
-}
-
-int GPIO::RetrieveNumStoredQuBits(unsigned long long int* LastTimeTaggRefAux, unsigned int* TotalCurrentNumRecordsQuadChAux, unsigned long long int TimeTaggsAux[QuadNumChGroups][MaxNumQuBitsMemStored], unsigned short int ChannelTagsAux[QuadNumChGroups][MaxNumQuBitsMemStored]){
-	if (SlowMemoryPermanentStorageFlag==true){
-		LastTimeTaggRefAux[0]=static_cast<unsigned long long int>(0.0*PRUclockStepPeriodNanoseconds);// Since whole number. Initiation value
-		// Detection tags
-		if (streamDDRpru.is_open()){
-			streamDDRpru.close();	
-			//streamDDRpru.clear(); // will reset these state flags, allowing you to continue using the stream for additional I/O operations
-		}
-
-		streamDDRpru.open(string(PRUdataPATH1) + string("TimetaggingData"), std::ios::binary | std::ios::in | std::ios::out);// Open for write and read, and clears all previous content	
-		if (!streamDDRpru.is_open()) {
-			streamDDRpru.open(string(PRUdataPATH2) + string("TimetaggingData"), std::ios::binary | std::ios::in | std::ios::out);// Open for write and read, and clears all previous content
-			if (!streamDDRpru.is_open()) {
-				cout << "Failed to re-open the streamDDRpru file." << endl;
-				return -1;
-			}
-		}
-		streamDDRpru.clear(); // will reset these state flags, allowing you to continue using the stream for additional I/O operations
-
-		if (streamDDRpru.is_open()){
-			streamDDRpru.seekg(0, std::ios::beg); // the get (reading) pointer back to the start!
-			streamDDRpru.clear(); // will reset these state flags, allowing you to continue using the stream for additional I/O operations
-			streamDDRpru.read(reinterpret_cast<char*>(&TimeTaggsLast), sizeof(TimeTaggsLastStored));
-			LastTimeTaggRefAux[0]=static_cast<unsigned long long int>(static_cast<long double>(TimeTaggsLast));// Since whole number. Initiation value
-			int lineCount = 0;
-			unsigned long long int ValueReadTest;		
-			int iIterMovAdjPulseSynchCoeff=0;
-			while (streamDDRpru.read(reinterpret_cast<char*>(&ValueReadTest), sizeof(ValueReadTest))) {// While true == not EOF
-			    streamDDRpru.clear(); // will reset these state flags, allowing you to continue using the stream for additional I/O operations
-			    TimeTaggsStored[lineCount]=static_cast<unsigned long long int>(ValueReadTest);		    
-			    ////////////////////////////////////////////////////////////////////////////////
-			    streamDDRpru.clear(); // will reset these state flags, allowing you to continue using the stream for additional I/O operations
-			    streamDDRpru.read(reinterpret_cast<char*>(&ChannelTagsStored[lineCount]), sizeof(ChannelTagsStored[lineCount]));
-	    	    //cout << "TimeTaggs[lineCount]: " << TimeTaggs[lineCount] << endl;
-	    	    //cout << "ChannelTags[lineCount]: " << ChannelTags[lineCount] << endl;
-	    	    lineCount++; // Increment line count for each line read	    
-	    	}
-	    	if (lineCount==0){cout << "RetrieveNumStoredQuBits: No timetaggs present!" << endl;}
-	    	TotalCurrentNumRecords=lineCount;
-	    	// Place the information in the structure for the upper layer agents
-	    	for (int iQuadChIter=0;iQuadChIter<QuadNumChGroups;iQuadChIter++){
-				TotalCurrentNumRecordsQuadCh[iQuadChIter]=0;
-			}
-			for (int i=0;i<TotalCurrentNumRecords;i++){
-				for (unsigned short iQuadChIter=0;iQuadChIter<QuadNumChGroups;iQuadChIter++){
-					if ((ChannelTagsStored[i]&(0x000F<<(4*iQuadChIter)))>0){  
-						TimeTaggsSplitted[iQuadChIter][TotalCurrentNumRecordsQuadCh[iQuadChIter]]=TimeTaggsStored[i];
-						ChannelTagsSplitted[iQuadChIter][TotalCurrentNumRecordsQuadCh[iQuadChIter]]=ChannelTagsStored[i]&(0x000F<<(4*iQuadChIter));
-						TotalCurrentNumRecordsQuadCh[iQuadChIter]++;
-					}
-				}
-			}
-	    }
-	    else{
-	    	cout << "RetrieveNumStoredQuBits: BBB streamDDRpru is not open!" << endl;
-	    	return -1;
-	    }
-	}
-	else{// Memory allocation
-		LastTimeTaggRefAux[0]=static_cast<unsigned long long int>(static_cast<long double>(TimeTaggsLastStored));// Since whole number. It is meant for computing the time between measurements to estimate the relative frequency difference. It is for synchronization purposes which generally will be under control so even if it is a multiple adquisiton the itme difference will be mantained so it generally ok.
-	}
-	// Place the information in the upper layer agent arrays
-	for (unsigned short iQuadChIter=0;iQuadChIter<QuadNumChGroups;iQuadChIter++){
-		for (unsigned int i=0;i<TotalCurrentNumRecordsQuadCh[iQuadChIter];i++){  
-			TimeTaggsAux[iQuadChIter][i]=TimeTaggsSplitted[iQuadChIter][i];
-			ChannelTagsAux[iQuadChIter][i]=ChannelTagsSplitted[iQuadChIter][i];			
-		}
-		TotalCurrentNumRecordsQuadChAux[iQuadChIter]=TotalCurrentNumRecordsQuadCh[iQuadChIter];
-
-		//////////////////////////////////////////////////////////////////////////
-		// Check. It can be commented for normal operation
-		//bool CheckOnceAux=false; //bool CheckOnceAux=false;
-		//if (TotalCurrentNumRecordsQuadCh[iQuadChIter]>1){
-		//	for (unsigned int i=0;i<(TotalCurrentNumRecordsQuadCh[iQuadChIter]-1);i++){		
-		//		if ((static_cast<long long int>(TimeTaggsAux[iQuadChIter][i+1])-static_cast<long long int>(TimeTaggsAux[iQuadChIter][i]))<=0){
-		//			cout << "GPIO::RetrieveNumStoredQuBits disorded TimeTaggsAux before processing!!! for i: " << i << ". Involved values TimeTaggsAux[iQuadChIter][i+1]: " << static_cast<long long int>(TimeTaggsAux[iQuadChIter][i+1]) << " and static_cast<long long int>(TimeTaggsAux[iQuadChIter][i]): " << static_cast<long long int>(TimeTaggsAux[iQuadChIter][i]) << endl;
-		//			CheckOnceAux=true;
-		//		}
-		//	}
-		//	if (CheckOnceAux==true){
-		//		cout << "GPIO::RetrieveNumStoredQuBits disorded TimeTaggsAux before processing!!! for iQuadChIter: " << iQuadChIter << endl;
-		//	}
-		//}
-		/////////////////////////////////////////////////////////////////////////
-	}
-
-	return TotalCurrentNumRecords;
 }
 
 int GPIO::IntMeanFilterSubArray(int* ArrayHolderAux,int MeanFilterFactor){
@@ -2015,22 +1025,6 @@ double GPIO::DoubleMeanFilterSubArray(double* ArrayHolderAux,int MeanFilterFacto
 	}
 }
 
-int GPIO::SendTriggerSignalsSelfTest(){ // Uses output pins to clock subsystems physically generating qubits or entangled qubits
-// Important, the following line at the very beggining to reduce the command jitter
-pru1dataMem_int[1]=static_cast<unsigned int>(this->NumberRepetitionsSignal); // set the number of repetitions
-pru1dataMem_int[0]=static_cast<unsigned int>(7); // set command
-prussdrv_pru_send_event(22);//pru1dataMem_int[1]=(unsigned int)2; // set to 2 means perform signals//prussdrv_pru_send_event(22);
-
-// Here there should be the instruction command to tell PRU1 to start generating signals
-// We have to define a command, compatible with the memoryspace of PRU0 to tell PRU1 to initiate signals
-
-retInterruptsPRU1=prussdrv_pru_wait_event_timeout(PRU_EVTOUT_1,WaitTimeInterruptPRU1);
-//cout << "retInterruptsPRU1: " << retInterruptsPRU1 << endl;
-
-prussdrv_pru_clear_event(PRU_EVTOUT_1, PRU1_ARM_INTERRUPT);// So it has time to clear the interrupt for the later iterations
-
-return 0;// all ok	
-}
 /*****************************************************************************
 * Local Function Definitions                                                 *
 *****************************************************************************/
@@ -2088,278 +1082,6 @@ int GPIO::LOCAL_DDMinit(){
     return 0;
 }
 
-// Operating system GPIO access (slow but simple)
-GPIO::GPIO(int number) {
-	this->number = number;
-	this->debounceTime = 0;
-	this->togglePeriod=100;
-	this->toggleNumber=-1; //infinite number
-	this->callbackFunction = NULL;
-	this->threadRunning = false;
-
-	ostringstream s;
-	s << "gpio" << number;
-	this->name = string(s.str());
-	this->path = GPIO_PATH + this->name + "/";
-	//this->exportGPIO();
-	// need to give Linux time to set up the sysfs structure
-	usleep(250000); // 250ms delay
-}
-
-//int GPIO::write(string path, string filename, string value){
-//	ofstream fs;
-//	fs.open((path + filename).c_str());
-//	if (!fs.is_open()){
-//		perror("GPIO: write failed to open file ");
-//		return -1;
-//	}
-//	fs << value;
-//	fs.close();
-//	return 0;
-//}
-
-//string GPIO::read(string path, string filename){
-//	ifstream fs;
-//	fs.open((path + filename).c_str());
-//	if (!fs.is_open()){
-//		perror("GPIO: read failed to open file ");
-//	}
-//	string input;
-//	getline(fs,input);
-//	fs.close();
-//	return input;
-//}
-
-//int GPIO::write(string path, string filename, int value){
-//	stringstream s;
-//	s << value;
-//	return this->write(path,filename,s.str());
-//}
-
-//int GPIO::exportGPIO(){
-//   return this->write(GPIO_PATH, "export", this->number);
-//}
-
-//int GPIO::unexportGPIO(){
-//   return this->write(GPIO_PATH, "unexport", this->number);
-//}
-/*
-int GPIO::setDirection(GPIO_DIRECTION dir){
-	switch(dir){
-	case INPUT: return this->write(this->path, "direction", "in");
-		break;
-	case OUTPUT:return this->write(this->path, "direction", "out");
-		break;
-	}
-	return -1;
-}
-
-int GPIO::setValue(GPIO_VALUE value){
-	switch(value){
-	case HIGH: return this->write(this->path, "value", "1");
-		break;
-	case LOW: return this->write(this->path, "value", "0");
-		break;
-	}
-	return -1;
-}
-
-int GPIO::setEdgeType(GPIO_EDGE value){
-	switch(value){
-	case NONE: return this->write(this->path, "edge", "none");
-		break;
-	case RISING: return this->write(this->path, "edge", "rising");
-		break;
-	case FALLING: return this->write(this->path, "edge", "falling");
-		break;
-	case BOTH: return this->write(this->path, "edge", "both");
-		break;
-	}
-	return -1;
-}
-
-int GPIO::setActiveLow(bool isLow){
-	if(isLow) return this->write(this->path, "active_low", "1");
-	else return this->write(this->path, "active_low", "0");
-}
-
-int GPIO::setActiveHigh(){
-	return this->setActiveLow(false);
-}
-
-GPIO_VALUE GPIO::getValue(){
-	string input = this->read(this->path, "value");
-	if (input == "0") return LOW;
-	else return HIGH;
-}
-
-GPIO_DIRECTION GPIO::getDirection(){
-	string input = this->read(this->path, "direction");
-	if (input == "in") return INPUT;
-	else return OUTPUT;
-}
-
-GPIO_EDGE GPIO::getEdgeType(){
-	string input = this->read(this->path, "edge");
-	if (input == "rising") return RISING;
-	else if (input == "falling") return FALLING;
-	else if (input == "both") return BOTH;
-	else return NONE;
-}
-
-int GPIO::streamInOpen(){
-	streamIn.open((path + "value").c_str());
-	return 0;
-}
-
-int GPIO::streamOutOpen(){
-	streamOut.open((path + "value").c_str());
-	return 0;
-}
-
-int GPIO::streamOutWrite(GPIO_VALUE value){
-	if (streamOut.is_open())
-	{
-		streamOut << value << std::flush;
-	}
-	else{
-		cout << "BBB streamOut is not open!" << endl;
-	}
-	return 0;
-}
-
-int GPIO::streamInRead(){
-	//string StrValue;	
-	//streamIn >> StrValue;//std::flush;
-	//return stoi(StrValue);
-	if (streamIn.is_open())
-	{
-		string StrValue;
-	//int IntValue;
-	//streamIn >> IntValue;	
-		getline(streamIn,StrValue);
-	streamIn.clear(); //< Now we can read again
-	streamIn.seekg(0, std::ios::beg); // back to the start!
-	//cout<<StrValue<<endl;
-	//cout<<IntValue<<endl;
-	if (StrValue == "0") return LOW;
-	else return HIGH;
-	//return IntValue;
-}
-else{
-	cout << "BBB streamIn is not open!" << endl;
-	return 0;
-}
-}
-
-int GPIO::streamInClose(){
-	streamIn.close();
-	return 0;
-}
-
-int GPIO::streamOutClose(){
-	streamOut.close();
-	return 0;
-}
-
-int GPIO::toggleOutput(){
-	this->setDirection(OUTPUT);
-	if ((bool) this->getValue()) this->setValue(LOW);
-	else this->setValue(HIGH);
-	return 0;
-}
-
-int GPIO::toggleOutput(int time){ return this->toggleOutput(-1, time); }
-int GPIO::toggleOutput(int numberOfTimes, int time){
-	this->setDirection(OUTPUT);
-	this->toggleNumber = numberOfTimes;
-	this->togglePeriod = time;
-	this->threadRunning = true;
-	if(pthread_create(&this->thread, NULL, &threadedToggle, static_cast<void*>(this))){
-		perror("GPIO: Failed to create the toggle thread");
-		this->threadRunning = false;
-		return -1;
-	}
-	return 0;
-}
-
-// This thread function is a friend function of the class
-void* threadedToggle(void *value){
-	GPIO *gpio = static_cast<GPIO*>(value);
-	bool isHigh = (bool) gpio->getValue(); //find current value
-	while(gpio->threadRunning){
-		if (isHigh)	gpio->setValue(HIGH);
-		else gpio->setValue(LOW);
-		usleep(gpio->togglePeriod * 500);
-		isHigh=!isHigh;
-		if(gpio->toggleNumber>0) gpio->toggleNumber--;
-		if(gpio->toggleNumber==0) gpio->threadRunning=false;
-	}
-	return 0;
-}
-
-// Blocking Poll - based on the epoll socket code in the epoll man page
-int GPIO::waitForEdge(){
-	this->setDirection(INPUT); // must be an input pin to poll its value
-	int fd, i, epollfd, count=0;
-	struct epoll_event ev;
-	epollfd = epoll_create(1);
-	if (epollfd == -1) {
-		perror("GPIO: Failed to create epollfd");
-		return -1;
-	}
-	if ((fd = open((this->path + "value").c_str(), O_RDONLY | O_NONBLOCK)) == -1) {
-		perror("GPIO: Failed to open file");
-		return -1;
-	}
-
-    //ev.events = read operation | edge triggered | urgent data
-	ev.events = EPOLLIN | EPOLLET | EPOLLPRI;
-    ev.data.fd = fd;  // attach the file file descriptor
-
-    //Register the file descriptor on the epoll instance, see: man epoll_ctl
-    if (epoll_ctl(epollfd, EPOLL_CTL_ADD, fd, &ev) == -1) {
-    	perror("GPIO: Failed to add control interface");
-    	return -1;
-    }
-	while(count<=1){  // ignore the first trigger
-		i = epoll_wait(epollfd, &ev, 1, -1);
-		if (i==-1){
-			perror("GPIO: Poll Wait fail");
-			count=5; // terminate loop
-		}
-		else {
-			count++; // count the triggers up
-		}
-	}
-	close(fd);
-	if (count==5) return -1;
-	return 0;
-}
-
-// This thread function is a friend function of the class
-void* threadedPoll(void *value){
-	GPIO *gpio = static_cast<GPIO*>(value);
-	while(gpio->threadRunning){
-		gpio->callbackFunction(gpio->waitForEdge());
-		usleep(gpio->debounceTime * 1000);
-	}
-	return 0;
-}
-
-int GPIO::waitForEdge(CallbackType callback){
-	this->threadRunning = true;
-	this->callbackFunction = callback;
-    // create the thread, pass the reference, address of the function and data
-	if(pthread_create(&this->thread, NULL, &threadedPoll, static_cast<void*>(this))){
-		perror("GPIO: Failed to create the poll thread");
-		this->threadRunning = false;
-		return -1;
-	}
-	return 0;
-}
-*/
-
 int GPIO::KillcodePRUs(){
 	if (prussdrv_exec_program(PRU_Signal_NUM, "./CppScripts/BBBhw/PRUkillSignal1.bin") == -1){//if (prussdrv_exec_program(PRU_Signal_NUM, "./CppScripts/BBBhw/PRUassTrigSigScript.bin") == -1){
 		if (prussdrv_exec_program(PRU_Signal_NUM, "./BBBhw/PRUkillSignal1.bin") == -1){//if (prussdrv_exec_program(PRU_Signal_NUM, "./BBBhw/PRUassTrigSigScript.bin") == -1){
@@ -2394,11 +1116,96 @@ GPIO::~GPIO() { // Destructor
 	close(tfd);// close the time descriptor
 	//munmap(ddrMem, 0x0FFFFFFF);
 	//close(mem_fd); // Device
-	//if(munmap(pru_int, PRU_LEN)) {
-	//	cout << "GPIO destructor: munmap failed" << endl;
-	//}
-	if (SlowMemoryPermanentStorageFlag==true){streamDDRpru.close();}
-	//streamSynchpru.close(); //Not used
 }
 
 } /* namespace exploringBB */
+
+
+using namespace exploringBB;
+
+int main(int argc, char const * argv[]){
+ // argv and argc are how command line arguments are passed to main() in C and C++.
+
+ // argc will be the number of strings pointed to by argv. This will (in practice) be 1 plus the number of arguments, as virtually all implementations will prepend the name of the program to the array.
+
+ // The variables are named argc (argument count) and argv (argument vector) by convention, but they can be given any valid identifier: int main(int num_args, char** arg_strings) is equally valid.
+
+ // They can also be omitted entirely, yielding int main(), if you do not intend to process command line arguments.
+ 
+ //printf( "argc:     %d\n", argc );
+ //printf( "argv[0]:  %s\n", argv[0] );
+ 
+ //if ( argc == 1 ) {
+ // printf( "No arguments were passed.\n" );
+ //}
+ //else{
+ // printf( "Arguments:\n" );
+ // for (int i = 1; i < argc; ++i ) {
+ //  printf( "  %d. %s\n", i, argv[i] );
+ // }
+ //}
+ 
+ cout << "GPIOspadSYScont started..." << endl;
+ 
+ GPIO GPIOagent; // Initiate the instance
+ 
+ GPIOagent.m_start(); // Initiate in start state.
+ 
+ /// Errors handling
+ signal(SIGINT, SignalINTHandler);// Interruption signal
+ signal(SIGPIPE, SignalPIPEHandler);// Error trying to write/read to a socket
+ //signal(SIGSEGV, SignalSegmentationFaultHandler);// Segmentation fault
+ 
+ bool isValidWhileLoop=true;
+ if (GPIOagent.getState()==GPIO::APPLICATION_EXIT){isValidWhileLoop = false;}
+ else{isValidWhileLoop = true;}
+ 
+ //CKPDagent.GenerateSynchClockPRU();// Launch the generation of the clock
+ cout << "Starting to actively adjust clock output..." << endl;
+ 
+ while(isValidWhileLoop){ 
+ 	//CKPDagent.acquire();
+   //try{
+ 	//try {
+    	// Code that might throw an exception 
+ 	// Check if there are need messages or actions to be done by the node
+ 	
+       switch(GPIOagent.getState()) {
+           case GPIO::APPLICATION_RUNNING: {               
+               // Do Some Work
+               //GPIOagent.HandleInterruptSynchPRU();
+               break;
+           }
+           case GPIO::APPLICATION_PAUSED: {
+               // Maybe do some checks if necessary 
+               break;
+           }
+           case GPIO::APPLICATION_EXIT: {                  
+               isValidWhileLoop=false;//break;
+           }
+           default: {
+               // ErrorHandling Throw An Exception Etc.
+           }
+
+        } // switch
+        
+	if (signalReceivedFlag.load()){GPIOagent.~GPIO();}// Destroy the instance
+        // Main barrier is in HandleInterruptSynchPRU function. No need for this CKPDagent.RelativeNanoSleepWait((unsigned int)(WaitTimeAfterMainWhileLoop));
+        
+    //}
+    //catch (const std::exception& e) {
+    //	// Handle the exception
+    //	cout << "Exception: " << e.what() << endl;
+    //	}
+  //} // upper try
+  //catch (...) { // Catches any exception
+  //cout << "Exception caught" << endl;
+  //  }
+	//CKPDagent.release();
+	//CKPDagent.RelativeNanoSleepWait((unsigned int)(WaitTimeAfterMainWhileLoop));// Used in busy-wait
+    } // while
+  cout << "Exiting GPIOspadSYScont" << endl;
+  
+  
+ return 0; // Everything Ok
+}
