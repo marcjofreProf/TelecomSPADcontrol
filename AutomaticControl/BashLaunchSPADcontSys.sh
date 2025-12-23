@@ -64,13 +64,21 @@ cleanup_on_SIGINT() {
   #sudo systemctl start systemd-timedated
   sudo systemctl daemon-reload
   sudo timedatectl set-ntp true # Start NTP
+
+: << 'COMMENT'
   echo 'Stopped PTP'
+COMMENT
+
   exit 0
 }
 
 trap cleanup_on_SIGINT SIGINT
 trap "kill 0" EXIT
+
+: << 'COMMENT'
 echo 'Running PTP'
+COMMENT
+
 # Kill non-wanted processes
 sudo pkill -f nodejs # javascript applications
 # Kill potentially previously running PTP clock processes and processes

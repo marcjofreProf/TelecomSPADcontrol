@@ -121,9 +121,9 @@ GPIO::GPIO(){// Redeclaration of constructor GPIOspadSYScont when no argument is
 	pru0dataMem_int[3]=static_cast<unsigned int>(1);
 	pru0dataMem_int[4]=static_cast<unsigned int>(this->TTGcoincWin); // set coincidence window length
 	*/
-	if (prussdrv_exec_program(PRU_Operation_NUM, "./CppScripts/BBBhw/PRUassTaggDetScriptSimple.bin") == -1){
-		if (prussdrv_exec_program(PRU_Operation_NUM, "./BBBhw/PRUassTaggDetScriptSimple.bin") == -1){
-			perror("prussdrv_exec_program non successfull writing of PRUassTaggDetScriptSimple.bin");
+	if (prussdrv_exec_program(PRU_Operation_NUM, "./CppScripts/PRUsignalReads.bin") == -1){
+		if (prussdrv_exec_program(PRU_Operation_NUM, "./PRUsignalReads.bin") == -1){
+			perror("prussdrv_exec_program non successfull writing of PRUsignalReads.bin");
 		}
 	}
 	////prussdrv_pru_enable(PRU_Operation_NUM);
@@ -140,9 +140,9 @@ GPIO::GPIO(){// Redeclaration of constructor GPIOspadSYScont when no argument is
 	pru1dataMem_int[7]=static_cast<unsigned int>(this->SigOFFPeriod);// Off time
 	*/
 	// Load and execute the PRU program on the PRU1
-	if (prussdrv_exec_program(PRU_Signal_NUM, "./CppScripts/BBBhw/PRUassTrigSigScriptHist4Sig.bin") == -1){//if (prussdrv_exec_program(PRU_Signal_NUM, "./CppScripts/BBBhw/PRUassTrigSigScript.bin") == -1){
-		if (prussdrv_exec_program(PRU_Signal_NUM, "./BBBhw/PRUassTrigSigScriptHist4Sig.bin") == -1){//if (prussdrv_exec_program(PRU_Signal_NUM, "./BBBhw/PRUassTrigSigScript.bin") == -1){
-			perror("prussdrv_exec_program non successfull writing of PRUassTrigSigScriptHist4Sig.bin");//perror("prussdrv_exec_program non successfull writing of PRUassTrigSigScript.bin");
+	if (prussdrv_exec_program(PRU_Signal_NUM, "./CppScripts/PRUsignalWrites.bin") == -1){
+		if (prussdrv_exec_program(PRU_Signal_NUM, "./PRUsignalWrites.bin") == -1){
+			perror("prussdrv_exec_program non successfull writing of PRUsignalWrites.bin");
 		}
 	}
 	/*
