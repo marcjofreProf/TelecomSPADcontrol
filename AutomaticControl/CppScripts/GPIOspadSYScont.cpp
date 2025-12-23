@@ -2,12 +2,12 @@
 Dept. Network Engineering
 Universitat Politècnica de Catalunya - Technical University of Catalonia
 
-Modified: 2025
-Created: 2024
+Modified: 2026
+Created: 2025
 
-Script for PRU real-time handling
+Script for PRU real-time handling of multi SPAD system
 */
-#include "GPIO.h"
+#include "GPIOspadSYScont.h"
 #include<iostream>
 #include<fstream>
 #include<bitset>
@@ -76,11 +76,8 @@ unsigned int* exploringBB::GPIO::sharedMem_int = nullptr;// Define and initializ
 unsigned int* exploringBB::GPIO::pru0dataMem_int = nullptr;// Define and initialize
 unsigned int* exploringBB::GPIO::pru1dataMem_int = nullptr;// Define and initialize
 int exploringBB::GPIO::mem_fd = -1;// Define and initialize 
-/**
- *
- * @param number The GPIO number for the BBB
- */
-GPIO::GPIO(){// Redeclaration of constructor GPIO when no argument is specified
+
+GPIO::GPIO(){// Redeclaration of constructor GPIOspadSYScont when no argument is specified
 	// Some variable initialization
 	// Initialize structure used by prussdrv_pruintc_intc
 	// PRUSS_INTC_INITDATA is found in pruss_intc_mapping.h

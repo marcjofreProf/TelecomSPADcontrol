@@ -1,3 +1,6 @@
+#!/bin/bash
+# Script to run the automatic SPAD system control
+
 # Stop superflous processes to stop
 sudo systemctl stop nginx
 sudo systemctl stop wpa_supplicant
@@ -53,8 +56,7 @@ cleanup_on_SIGINT() {
   # Kill potentially previously running processes
   sudo pkill -f ptp4l
   sudo pkill -f phc2sys
-  sudo pkill -f QtransportLayerAgentN
-  sudo pkill -f BBBclockKernelPhysicalDaemon
+  sudo pkill -f GPIOspadSYScont
   
   sudo systemctl enable --now systemd-timesyncd # start system synch
   sudo systemctl start systemd-timesyncd # start system synch
@@ -74,8 +76,7 @@ sudo pkill -f nodejs # javascript applications
 # Kill potentially previously running PTP clock processes and processes
 sudo pkill -f ptp4l
 sudo pkill -f phc2sys
-sudo pkill -f QtransportLayerAgentN
-sudo pkill -f BBBclockKernelPhysicalDaemon
+sudo pkill -f GPIOspadSYScont
 sleep 1 # wait 1 second to make sure to kill the old processes
 ########################################################
 # Set realtime priority with chrt -f and priority 1
@@ -172,7 +173,7 @@ if [[ $is_rt_kernel -eq 0 ]]; then
 	sudo config-pin P8_46 pruout
 fi
 
-sudo nice -n $NicenestPriorValue ./CppScripts/QtransportLayerAgentN client 10.0.0.254 10.0.0.2 & #192.168.8.2 192.168.8.1 &
+sudo nice -n $NicenestPriorValue ./CppScripts/GPIOspadSYScont &
 
 ## Update process priority values
 pidAux=$(pidof -s ptp0)
@@ -212,7 +213,7 @@ if [[ $is_rt_kernel -eq 1 ]]; then
   #sudo chrt -f -p $PriorityValue $pidAux
 fi
 
-pidAux=$(pgrep -f "QtransportLayerAgentN")
+pidAux=$(pgrep -f "GPIOspadSYScont")
 sudo chrt -f -p $PriorityNoSoHighValue $pidAux
 
 # Maybe using adjtimex is bad idea because it is an extra layer not controlled by synchronization protocols
