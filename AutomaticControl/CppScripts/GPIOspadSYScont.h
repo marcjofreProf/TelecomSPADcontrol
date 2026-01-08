@@ -23,6 +23,9 @@ Header declaration file for handling PRU
 // Timer management
 #include <sys/timerfd.h>
 #include <sys/select.h>
+// SPIc ommunications
+#include <sys/ioctl.h>
+#include <linux/spi/spidev.h>
 
 using namespace std;
 
@@ -51,11 +54,6 @@ public: //Variables
 
 private:// Variables
 	ApplicationState m_state;
-	// For frequency synchronization Then, the interrogation time has to be made very large (seconds)
-	int SynchCorrectionTimeFreqNoneFlag=2; // Frequency correction is not undercontrol and difficult (better to have good physical synch) //0: No correction; 1: frequency correction; 2: Time correction; 3: time and frequency correction
-	bool SynchPlaneDomainMode=false; // false: The real-time clock dominates (logical control plane just has to enter correctly thorugh the interrupt); true: the control plane logical PTP clock dominates
-	bool SlowMemoryPermanentStorageFlag=false; // Variable when true they are stored in a file (slower due to writting and reading) ; otherwise it uses array memory to store qubits (much faster)
-	bool ResetPeriodicallyTimerPRU1=true;// Avoiding interrupts
 	// Priority values
 	int PriorityValRegular=60; // Regular priority during most of the operation
 	int PriorityValTop=70; // Top priority for critical operations
@@ -79,12 +77,16 @@ private:// Variables
 	    static time_point now()
 	    {
 	    	timespec ts;
-		if (clock_gettime(CLOCK_REALTIME, &ts))// CLOCK_REALTIME//CLOCK_TAI. Seems that CLOCK_TAI does not work with timerfd
-			throw 1;
-		using sec = std::chrono::seconds;
-		return time_point{sec{ts.tv_sec}+duration{ts.tv_nsec}};
-	}
-};
+			if (clock_gettime(CLOCK_REALTIME, &ts))// CLOCK_REALTIME//CLOCK_TAI. Seems that CLOCK_TAI does not work with timerfd
+				throw 1;
+			using sec = std::chrono::seconds;
+			return time_point{sec{ts.tv_sec}+duration{ts.tv_nsec}};
+		}
+	};
+
+	int WaitTimeInterruptPRU0=7500000; //up to 20000000 with Simple TTG. In microseconds
+	int WaitTimeInterruptPRU1=7500000; // In microseconds. 
+
 	unsigned long long int TimePRU1synchPeriod=100000000; // In nanoseconds and multiple of PRUclockStepPeriodNanoseconds// The faster the more corrections, and less time passed since last correction, but more averaging needed. Also, there is a limit on the lower limit to procees and handle interrupts. Also, the sorter the more error in the correct estimation, since there has not elapsed enough time to compute a tendency (it also happens with PRUdetCorrRelFreq() method whre a separation TagsSeparationDetRelFreq is inserted). The limit might be the error at each iteration, if the error becomes too small, then it cannot be corrected. Anyway, with a better hardware clock (more stable) the correctioons can be done more separated in time).
 	using Clock = my_clock;//Clock = std::chrono::system_clock;// Since we use a time sleep, it might make sense a system_clock//tai_clock, system_clock or steady_clock;
 	using TimePoint = std::chrono::time_point<Clock>;
@@ -117,6 +119,9 @@ private:// Variables
 	unsigned long long int extendedCounterPRUholder=0; // 64 bits.
 	unsigned long long int extendedCounterPRUholderOld=0; // 64 bits
 	unsigned long long int extendedCounterPRUaux=0; // 64 bits
+
+	// SPI communications
+	int spi_fd; // SPI file descriptor
 	
 
 public:	// Functions/Methods
@@ -136,8 +141,7 @@ public:	// Functions/Methods
 	int InitAgentProcess();
 	int LOCAL_DDMinit();	
 	int DisablePRUs();
-	int ReadTimeStamps();// Read the associated SPAD counters
-	int SendTriggerSignals(); // Write the AC GEiger signals (Frequency, duty cycle...)Uses output pins to clock subsystems physically generating qubits or entangled qubits
+	int HandleInterruptPRUs(); // Main call function to manage the operation in/out of the PRUs
 	int RelativeNanoSleepWait(unsigned int TimeNanoSecondsSleep);
 	~GPIO();  //destructor
 
@@ -153,6 +157,8 @@ private: // Functions/Methods
 	// Data processing
 	unsigned short packBits(unsigned short value);
 	int DDRdumpdata();
+	int ReadTimeCounts();// Read the associated SPAD counters
+	int SendControlSignals(); // Write the AC Geiger signals (Frequency, duty cycle...)Uses output pins to clock subsystems physically generating qubits or entangled qubits
 	// Mean filter
 	long double LongDoubleMeanFilterSubArray(long double* ArrayHolderAux,int MeanFilterFactor);
 	int IntMeanFilterSubArray(int* ArrayHolderAux,int MeanFilterFactor);
