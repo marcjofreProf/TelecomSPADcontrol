@@ -166,10 +166,10 @@ COMMENT
 : << 'COMMENT'
 if [[ $is_rt_kernel -eq 0 ]]; then
 	echo 'Enabling PRU pins'
-	sudo config-pin P9_28 pruin
-	sudo config-pin P9_29 pruin
-	sudo config-pin P9_30 pruin
-	sudo config-pin P9_31 pruin
+	#sudo config-pin P9_28 pruin
+	#sudo config-pin P9_29 pruin
+	#sudo config-pin P9_30 pruin
+	#sudo config-pin P9_31 pruin
 	sudo config-pin P8_15 pruin
 	sudo config-pin P8_16 pruin
 	sudo config-pin P9_25 pruin
