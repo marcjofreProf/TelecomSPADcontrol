@@ -191,6 +191,19 @@ if [[ $is_rt_kernel -eq 0 ]]; then
 	sudo config-pin P8_46 pruout
 fi
 COMMENT
+# For SPI1, /dev/spidev1.#
+#
+# sudo config-pin p9_17 spi_cs
+# sudo config-pin p9_18 spi
+# sudo config-pin p9_21 spi
+# sudo config-pin p9_22 spi_sclk
+ 
+# For SPI0, /dev/spidev2.#
+#
+sudo config-pin p9_28 spi_cs
+sudo config-pin p9_29 spi
+sudo config-pin p9_30 spi
+sudo config-pin p9_31 spi_sclk
 
 sudo nice -n $NicenestPriorValue ./CppScripts/GPIOspadSYScont &
 
