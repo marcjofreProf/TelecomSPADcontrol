@@ -274,7 +274,7 @@ struct timespec GPIO::SetWhileWait(){
 	return requestWhileWaitAux;
 }
 
-int GPIO::ReadTimeStamps(int iIterRunsAux,int QuadEmitDetecSelecAux, double SynchTrigPeriodAux,unsigned int NumQuBitsPerRunAux, double* FineSynchAdjValAux, unsigned long long int QPLAFutureTimePointNumber, bool QPLAFlagTestSynchAux){// Read the detected timestaps in four channels
+int GPIO::ReadTimeStamps(){// Read the SPADs associated counters
 /////////////
 	/*
 	try{
@@ -445,7 +445,7 @@ int GPIO::ReadTimeStamps(int iIterRunsAux,int QuadEmitDetecSelecAux, double Sync
 return 0;// all ok
 }
 
-int GPIO::SendTriggerSignals(int QuadEmitDetecSelecAux, double SynchTrigPeriodAux,unsigned int NumberRepetitionsSignalAux,double* FineSynchAdjValAux,unsigned long long int QPLAFutureTimePointNumber, bool QPLAFlagTestSynchAux){ // Uses output pins to clock subsystems physically generating qubits or entangled qubits
+int GPIO::SendTriggerSignals(){ 
 	/*
 	try{
 	this->QPLAFlagTestSynch=QPLAFlagTestSynchAux;
@@ -672,7 +672,7 @@ int GPIO::SendTriggerSignals(int QuadEmitDetecSelecAux, double SynchTrigPeriodAu
 return 0;// all ok	
 }
 
-int GPIO::DDRdumpdata(int iIterRunsAux){
+int GPIO::DDRdumpdata(){
 /*//cout << "GPIO::Reading timetags" << endl;
 // Reading data from PRU shared and own RAMs
 //DDR_regaddr = (short unsigned int*)ddrMem + OFFSET_DDR;
@@ -1082,6 +1082,15 @@ int GPIO::LOCAL_DDMinit(){
     return 0;
 }
 
+int GPIO::RelativeNanoSleepWait(unsigned int TimeNanoSecondsSleep){
+struct timespec ts;
+ts.tv_sec=(int)(TimeNanoSecondsSleep/((long)1000000000));
+ts.tv_nsec=(long)(TimeNanoSecondsSleep%(long)1000000000);
+clock_nanosleep(CLOCK_REALTIME, 0, &ts, NULL); //
+
+return 0; // All ok
+}
+
 int GPIO::KillcodePRUs(){
 	if (prussdrv_exec_program(PRU_Signal_NUM, "./CppScripts/BBBhw/PRUkillSignal1.bin") == -1){//if (prussdrv_exec_program(PRU_Signal_NUM, "./CppScripts/BBBhw/PRUassTrigSigScript.bin") == -1){
 		if (prussdrv_exec_program(PRU_Signal_NUM, "./BBBhw/PRUkillSignal1.bin") == -1){//if (prussdrv_exec_program(PRU_Signal_NUM, "./BBBhw/PRUassTrigSigScript.bin") == -1){
@@ -1161,7 +1170,7 @@ int main(int argc, char const * argv[]){
  else{isValidWhileLoop = true;}
  
  //CKPDagent.GenerateSynchClockPRU();// Launch the generation of the clock
- cout << "Starting to actively adjust clock output..." << endl;
+ cout << "Starting to actively adjust Telecom SPADs outputs..." << endl;
  
  while(isValidWhileLoop){ 
  	//CKPDagent.acquire();
@@ -1190,7 +1199,7 @@ int main(int argc, char const * argv[]){
         } // switch
         
 	if (signalReceivedFlag.load()){GPIOagent.~GPIO();}// Destroy the instance
-        // Main barrier is in HandleInterruptSynchPRU function. No need for this CKPDagent.RelativeNanoSleepWait((unsigned int)(WaitTimeAfterMainWhileLoop));
+    GPIOagent.RelativeNanoSleepWait((unsigned int)(WaitTimeAfterMainWhileLoop));
         
     //}
     //catch (const std::exception& e) {
@@ -1202,7 +1211,7 @@ int main(int argc, char const * argv[]){
   //cout << "Exception caught" << endl;
   //  }
 	//CKPDagent.release();
-	//CKPDagent.RelativeNanoSleepWait((unsigned int)(WaitTimeAfterMainWhileLoop));// Used in busy-wait
+	//CKPDagent.RelativeNanoSleepWait((unsigned int)(WaitTimeAfterMainWhileLoop));
     } // while
   cout << "Exiting GPIOspadSYScont" << endl;
   

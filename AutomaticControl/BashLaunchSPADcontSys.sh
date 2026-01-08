@@ -260,6 +260,6 @@ fi
 echo "$line_to_add" | sudo crontab -
 COMMENT
 
-read -r -p "Press Ctrl+C to kill launched processes
-" # Block operation until Ctrl+C is pressed
+read -r -p "Press Ctrl+C to kill launched processes"
+# Block operation until Ctrl+C is pressed
 

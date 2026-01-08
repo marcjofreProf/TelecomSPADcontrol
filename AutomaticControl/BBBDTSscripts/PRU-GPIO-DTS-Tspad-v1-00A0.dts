@@ -22,7 +22,7 @@
    
    // I think part-number is supposed to correspond with the filename,  
    // so we'd save this as "PRU-GPIO-DTS-Qlan-v1-00A0.dts".  
-   part-number = "PRU-GPIO-DTS-Qlan-v1";  
+   part-number = "PRU-GPIO-DTS-Tspad-v1";  
    
    // This always seems to be 00A0, and all the .dtbo files in /lib/firmware  
    // seem to be named foo-00A0.dtbo, but then are loaded without that suffix.  So

@@ -31,6 +31,7 @@ using std::ofstream;
 using std::ifstream;
 using std::fstream;
 
+#define WaitTimeAfterMainWhileLoop 990000000 //nanoseconds. Maximum 999999999
 #define PRUclockStepPeriodNanoseconds		5.00000 //4.99999 // Very critical parameter experimentally assessed. PRU clock cycle time in nanoseconds. Specs says 5ns, but maybe more realistic is the 24 MHz clock is a bit higher and then multiplied by 8
 
 namespace exploringBB {
@@ -122,21 +123,22 @@ public:	// Functions/Methods
 	// PRU
 	GPIO(); // initializates PRU operation
 	// Managing status of this Agent
-        ApplicationState getState() const { return m_state; }	
-        bool m_start() { m_state = APPLICATION_RUNNING; return true; }
-        bool m_pause() { m_state = APPLICATION_PAUSED; return true; } 
-        // resume may keep track of time if the application uses a timer.
-        // This is what makes it different than start() where the timer
-        // in start() would be initialized to 0. And the last time before
-        // paused was trigger would be saved, and then reset as new starting
-        // time for your timer or counter. 
-        bool m_resume() { m_state = APPLICATION_RUNNING; return true; }      
-        bool m_exit() { m_state = APPLICATION_EXIT;  return false; }
+    ApplicationState getState() const { return m_state; }	
+    bool m_start() { m_state = APPLICATION_RUNNING; return true; }
+    bool m_pause() { m_state = APPLICATION_PAUSED; return true; } 
+    // resume may keep track of time if the application uses a timer.
+    // This is what makes it different than start() where the timer
+    // in start() would be initialized to 0. And the last time before
+    // paused was trigger would be saved, and then reset as new starting
+    // time for your timer or counter. 
+    bool m_resume() { m_state = APPLICATION_RUNNING; return true; }      
+    bool m_exit() { m_state = APPLICATION_EXIT;  return false; }
 	int InitAgentProcess();
 	int LOCAL_DDMinit();	
 	int DisablePRUs();
-	int ReadTimeStamps(int iIterRunsAux,int QuadEmitDetecSelecAux, double SynchTrigPeriodAux,unsigned int NumQuBitsPerRunAux,double* FineSynchAdjValAux, unsigned long long int QPLAFutureTimePointNumber, bool FlagTestSynchAux);// Read the detected timestaps in four channels
-	int SendTriggerSignals(int QuadEmitDetecSelecAux, double SynchTrigPeriodAux,unsigned int NumberRepetitionsSignalAux,double* FineSynchAdjValAux,unsigned long long int QPLAFutureTimePointNumber, bool FlagTestSynchAux); // Uses output pins to clock subsystems physically generating qubits or entangled qubits
+	int ReadTimeStamps();// Read the associated SPAD counters
+	int SendTriggerSignals(); // Write the AC GEiger signals (Frequency, duty cycle...)Uses output pins to clock subsystems physically generating qubits or entangled qubits
+	int RelativeNanoSleepWait(unsigned int TimeNanoSecondsSleep);
 	~GPIO();  //destructor
 
 private: // Functions/Methods
@@ -150,7 +152,7 @@ private: // Functions/Methods
 	struct timespec SetWhileWait();	
 	// Data processing
 	unsigned short packBits(unsigned short value);
-	int DDRdumpdata(int iIterRunsAux);
+	int DDRdumpdata();
 	// Mean filter
 	long double LongDoubleMeanFilterSubArray(long double* ArrayHolderAux,int MeanFilterFactor);
 	int IntMeanFilterSubArray(int* ArrayHolderAux,int MeanFilterFactor);
