@@ -17,7 +17,7 @@ sudo systemctl stop haveged
 is_rt_kernel() {
   kernel_version=$(uname -r) # Get the kernel version
   if [[ $kernel_version =~ [[:alnum:]]*ti-rt[[:alnum:]]* ]]; then
-    echo "Real-time kernel detected"
+    echo "Real-time kernel detected...operation not tested in RT-kernels"
     return 1  # Real-time kernel detected (return 0)
   else
     echo "Non-real-time kernel detected"
@@ -164,32 +164,26 @@ sudo nice -n $NicenestPriorValue ./linuxptp/phc2sys -s eth0 -c CLOCK_REALTIME -w
 COMMENT
 
 : << 'COMMENT'
-if [[ $is_rt_kernel -eq 0 ]]; then
-	echo 'Enabling PRU pins'
-	#sudo config-pin P9_28 pruin
-	#sudo config-pin P9_29 pruin
-	#sudo config-pin P9_30 pruin
-	#sudo config-pin P9_31 pruin
-	sudo config-pin P8_15 pruin
-	sudo config-pin P8_16 pruin
-	sudo config-pin P9_25 pruin
-	sudo config-pin P9_27 pruin
-	sudo config-pin P9_41 pruin
-	sudo config-pin P9_91 pruin
-	sudo config-pin P9_92 pruin
-	sudo config-pin P8_27 pruout
-	sudo config-pin P8_28 pruout
-	sudo config-pin P8_29 pruout
-	sudo config-pin P8_30 pruout
-	sudo config-pin P8_39 pruout
-	sudo config-pin P8_40 pruout
-	sudo config-pin P8_41 pruout
-	sudo config-pin P8_42 pruout
-	sudo config-pin P8_43 pruout
-	sudo config-pin P8_44 pruout
-	sudo config-pin P8_45 pruout
-	sudo config-pin P8_46 pruout
-fi
+echo 'Enabling PRU and SPI pins'
+sudo config-pin P8_15 pruin
+sudo config-pin P8_16 pruin
+sudo config-pin P9_25 pruin
+sudo config-pin P9_27 pruin
+sudo config-pin P9_41 pruin
+sudo config-pin P9_91 pruin
+sudo config-pin P9_92 pruin
+sudo config-pin P8_27 pruout
+sudo config-pin P8_28 pruout
+sudo config-pin P8_29 pruout
+sudo config-pin P8_30 pruout
+sudo config-pin P8_39 pruout
+sudo config-pin P8_40 pruout
+sudo config-pin P8_41 pruout
+sudo config-pin P8_42 pruout
+sudo config-pin P8_43 pruout
+sudo config-pin P8_44 pruout
+sudo config-pin P8_45 pruout
+sudo config-pin P8_46 pruout
 COMMENT
 # For SPI1, /dev/spidev1.#
 #
