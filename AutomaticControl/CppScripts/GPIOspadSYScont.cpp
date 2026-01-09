@@ -309,7 +309,7 @@ int GPIO::SPIrampVoltage(int spi_fdAux, float desired_voltage, float max_rate, b
     // Check if already at target (within 0.25V tolerance)
     if (fabs(currentSPIvalue - desired_voltage) < 0.25) {
         currentSPIvalue = desired_voltage;
-        if (verbose) cout << "At target: " << setprecision(2) << desired_voltage << "V" << endl;
+        if (verbose) cout << "At target: " << fixed << setprecision(2) << desired_voltage << "V" << endl;
         return 0;
     }
     
@@ -334,7 +334,7 @@ int GPIO::SPIrampVoltage(int spi_fdAux, float desired_voltage, float max_rate, b
     float step_time = (step_range / max_rate) * decimation * 1000000;
     
     if (verbose) {
-        cout << "Ramping: " << currentSPIvalue << "V -> " << desired_voltage << "V" << endl;
+        cout << "Ramping: " << fixed << setprecision(2) << currentSPIvalue << "V -> " << fixed << setprecision(2) << desired_voltage << "V" << endl;
         cout << "Steps: " << steps << " | Time: " << (step_time * steps / 1000000.0) << "s" << endl;
         cout << "[";
     }
@@ -364,7 +364,7 @@ int GPIO::SPIrampVoltage(int spi_fdAux, float desired_voltage, float max_rate, b
                 else if (j == percent * 40 / 100) cout << ">";
                 else cout << " ";
             }
-            cout << "] " << percent << "% (" << setprecision(2) << voltage << "V)";
+            cout << "] " << percent << "% (" << fixed << setprecision(2) << voltage << "V)";
             cout.flush();
         }
         
@@ -373,7 +373,7 @@ int GPIO::SPIrampVoltage(int spi_fdAux, float desired_voltage, float max_rate, b
     
     if (verbose) {
         cout << "\r\033[K";
-        cout << "\r[========================================] 100% (" << setprecision(2) << desired_voltage << "V)" << endl;
+        cout << "\r[========================================] 100% (" << fixed << setprecision(2) << desired_voltage << "V)" << endl;
     }
     
     currentSPIvalue = desired_voltage;
