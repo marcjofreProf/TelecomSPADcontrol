@@ -23,8 +23,8 @@ Script for PRU real-time handling of multi SPAD system
 #include<thread>
 #include<pthread.h>
 #include<unistd.h>
-#include <algorithm> // For std::nth_element
-#include <signal.h>
+#include<algorithm> // For std::nth_element
+#include<signal.h>
 // Watchdog
 #include <sys/ioctl.h>
 #include <linux/watchdog.h>
@@ -278,27 +278,21 @@ this->valueSemaphore.store(true,std::memory_order_release); // Make sure it stay
 }
 //////////////////////////////////////////////
 // SPI communicatoin operations
-uint8_t GPIO::spiTransferByte(int spi_fdAux, uint8_t tx_byte) {
-    struct spi_ioc_transfer xfer;
-    
-    memset(&xfer, 0, sizeof(xfer));
-    
-    // Create local copies that will stay in scope
-    uint8_t tx_data = tx_byte;
-    uint8_t rx_data = 0;
-    
-    xfer.tx_buf = reinterpret_cast<uint64_t>(&tx_data);
-	xfer.rx_buf = reinterpret_cast<uint64_t>(&rx_data);
-    xfer.len = 1;
-    
-    int ret = ioctl(spi_fdAux, SPI_IOC_MESSAGE(1), &xfer);
-    
+uint8_t GPIO::spiTransferByte(int spi_fdAux, uint8_t tx){
+    uint8_t rx = 0;
+    spi_ioc_transfer tr{};
+
+    tr.tx_buf = reinterpret_cast<uint64_t>(&tx);
+    tr.rx_buf = reinterpret_cast<uint64_t>(&rx);
+    tr.len = 1;
+    tr.bits_per_word = 8;
+
+    int ret = ioctl(spi_fdAux, SPI_IOC_MESSAGE(1), &tr);
     if (ret != 1) {
-        perror("SPI transfer failed");
-        // Handle error
+        perror("SPI_IOC_MESSAGE");
     }
-    
-    return rx_data;
+
+    return rx;
 }
 
 
@@ -356,7 +350,7 @@ int GPIO::SPIrampVoltage(int spi_fdAux, float desired_voltage, float max_rate, b
         if (spi_val > 255) spi_val = 255;
         
         spiTransferByte(spi_fdAux, (uint8_t)spi_val);
-        cout << "spi_val: 0x" << hex << spi_val << dec << endl;
+        //cout << "spi_val: 0x" << hex << spi_val << dec << endl;
         
         float voltage = MIN_V + (RATIO * (255 - spi_val));
         currentSPIvalue = voltage;

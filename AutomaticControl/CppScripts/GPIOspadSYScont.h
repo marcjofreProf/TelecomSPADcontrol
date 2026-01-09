@@ -179,7 +179,7 @@ private: // Functions/Methods
 	int DoubleBubbleSort(double* arr,int MedianFilterFactor);
 	int IntBubbleSort(int* arr,int MedianFilterFactor);
 	// SPI communications
-	uint8_t spiTransferByte(int spi_fdAux, uint8_t tx_byte);		
+	uint8_t spiTransferByte(int spi_fdAux, uint8_t tx);
 };
 
 } /* namespace exploringBB */
