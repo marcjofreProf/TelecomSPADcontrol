@@ -369,6 +369,7 @@ int GPIO::SPIrampVoltage(int spi_fdAux, float desired_voltage, float max_rate, b
         }
         
         if (i < steps) usleep((useconds_t)step_time);
+        spiTransferByte(spi_fdAux, (uint8_t)0xFF);//spi_val);
     }
     
     if (verbose) {
@@ -977,7 +978,7 @@ int main(int argc, char const * argv[]){
  
  //CKPDagent.GenerateSynchClockPRU();// Launch the generation of the clock
  // First initial volage bias up
- //GPIOagent.currentSPIvalue=GPIOagent.SPIrampVoltage(GPIOagent.spi_fd, 55, 2.0, true);
+ GPIOagent.currentSPIvalue=GPIOagent.SPIrampVoltage(GPIOagent.spi_fd, 55, 2.0, true);
  
  while(isValidWhileLoop && !signalReceivedFlag.load()){ 
  	//CKPDagent.acquire();
