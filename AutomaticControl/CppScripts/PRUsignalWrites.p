@@ -114,8 +114,8 @@ INITIATIONS:
 	LDI	r4, 0 // zeroing
 	MOV	r1, NUM_REPETITIONS// Initial initialization jus tin case// Cannot be done with LDI instruction because it may be a value larger than 65535. load r3 with the number of cycles. For the time being only up to 65535 ->develop so that it can be higher
 	LDI	r0, 0 // Ensure reset commands
-	LDI	r14, 50 // ON state
-	LDI	r15, 150 // OFF state
+	LDI	r14, 5 // ON state
+	LDI	r15, 15 // OFF state
 	
 //	LED_ON	// just for signaling initiations
 //	LED_OFF	// just for signaling initiations
