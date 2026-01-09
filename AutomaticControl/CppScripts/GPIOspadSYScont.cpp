@@ -921,11 +921,9 @@ int GPIO::DisablePRUs(){
 
 GPIO::~GPIO() { // Destructor
 	cout << "Exiting GPIOspadSYScont..." << endl;
-
-	  // Finish with lowering the bias voltage
-	  currentSPIvalue=SPIrampVoltage(spi_fd, MIN_V, 2.0, true);
-	  
-	  cout << "Exit GPIOspadSYScont done!" << endl;
+	// Finish with lowering the bias voltage
+	currentSPIvalue=SPIrampVoltage(spi_fd, MIN_V, 2.0, false);	  
+	cout << "Exit GPIOspadSYScont done!" << endl;
 
 //	this->unexportGPIO();
 	close(spi_fd); // Close SPI file descriptor
