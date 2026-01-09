@@ -304,19 +304,14 @@ int GPIO::SPIrampVoltage(int spi_fdAux, float desired_voltage, float max_rate, b
     
     // Check if already at target (within 0.25V tolerance)
     if (fabs(currentSPIvalue - desired_voltage) < 0.25) {
-        int target_spi = 256 - (int)((desired_voltage - MIN_V) / RATIO);
-        if (target_spi < 0) target_spi = 0;
-        if (target_spi > 255) target_spi = 255;
-        
-        spiTransferByte(spi_fdAux, (uint8_t)target_spi);
         currentSPIvalue = desired_voltage;
         if (verbose) cout << "At target: " << desired_voltage << "V" << endl;
         return 0;
     }
     
     // Convert voltages to SPI values
-    int current_spi = 256 - (int)((currentSPIvalue - MIN_V) / RATIO);
-    int target_spi = 256 - (int)((desired_voltage - MIN_V) / RATIO);
+    int current_spi = 255 - (int)((currentSPIvalue - MIN_V) / RATIO);
+    int target_spi = 255 - (int)((desired_voltage - MIN_V) / RATIO);
     
     // Clamp
     if (current_spi < 0) current_spi = 0;
@@ -342,7 +337,7 @@ int GPIO::SPIrampVoltage(int spi_fdAux, float desired_voltage, float max_rate, b
     
     // Perform ramp
     for (int i = 0; i <= steps; i++) {
-        if (signalReceivedFlag.load()) return -3;
+        //if (signalReceivedFlag.load()) return -3; Do not check on this - finish the ramp safely
         
         float t = (float)i / steps;
         int spi_val = current_spi + (int)(t * (target_spi - current_spi));
