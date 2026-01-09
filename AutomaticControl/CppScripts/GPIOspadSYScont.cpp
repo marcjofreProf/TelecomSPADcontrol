@@ -308,7 +308,7 @@ int GPIO::SPIrampVoltage(int spi_fdAux, float desired_voltage, float max_rate, b
     // Check if already at target (within 0.25V tolerance)
     if (fabs(currentSPIvalue - desired_voltage) < 0.25) {
         currentSPIvalue = desired_voltage;
-        if (verbose) cout << "At target: " << desired_voltage << "V" << endl;
+        if (verbose) cout << "At target: " << setprecision(2) << desired_voltage << "V" << endl;
         return 0;
     }
     
@@ -363,7 +363,7 @@ int GPIO::SPIrampVoltage(int spi_fdAux, float desired_voltage, float max_rate, b
                 else if (j == percent * 40 / 100) cout << ">";
                 else cout << " ";
             }
-            cout << "] " << percent << "% (" << voltage << "V)";
+            cout << "] " << percent << "% (" << setprecision(2) << voltage << "V)";
             cout.flush();
         }
         
@@ -372,7 +372,7 @@ int GPIO::SPIrampVoltage(int spi_fdAux, float desired_voltage, float max_rate, b
     
     if (verbose) {
         cout << "\r\033[K";
-        cout << "\r[========================================] 100% (" << desired_voltage << "V)" << endl;
+        cout << "\r[========================================] 100% (" << setprecision(2) << desired_voltage << "V)" << endl;
     }
     
     currentSPIvalue = desired_voltage;
@@ -916,8 +916,8 @@ int GPIO::DisablePRUs(){
 
 GPIO::~GPIO() { // Destructor
 	cout << "Exiting GPIOspadSYScont..." << endl;
-	// Finish with lowering the bias voltage
-	SPIrampVoltage(spi_fd, MIN_V, 2.0, false);	  
+	// Finish with lowering the bias voltage  
+	spiTransferByte(spi_fd, 0xFF); // Set final value
 	cout << "Exit GPIOspadSYScont done!" << endl;
 
 //	this->unexportGPIO();
