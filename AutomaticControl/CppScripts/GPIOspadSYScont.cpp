@@ -15,6 +15,7 @@ Script for PRU real-time handling of multi SPAD system
 #include<sstream> // For istringstream
 #include<cstdlib>
 #include<cstring> // For memset
+#include<cstdint> // for SPI data
 #include<cstdio>
 #include<fcntl.h>
 #include<unistd.h>
@@ -178,7 +179,7 @@ GPIO::GPIO(){// Redeclaration of constructor GPIOspadSYScont when no argument is
 	//this->setMaxRrPriority();// for the main instance. But it stalls operation in RealTime kernel.
 	//////////////////////////////////////////////////////////
 	// Initiate SPI communications
-	const char* spi_device = "/dev/spidev0.1";  // SPI1 bus, CS0
+	const char* spi_device = "/dev/spidev1.0";  // SPI1 bus, CS0
 	// Open SPI device
 	int spi_fd = open(spi_device, O_RDWR);
 	if (spi_fd < 0) {
@@ -279,7 +280,6 @@ this->valueSemaphore.store(true,std::memory_order_release); // Make sure it stay
 // SPI communicatoin operations
 uint8_t GPIO::spiTransferByte(int spi_fdAux, uint8_t tx_byte) {
     struct spi_ioc_transfer xfer;
-    uint8_t rx_byte;
     
     memset(&xfer, 0, sizeof(xfer));
     
@@ -287,8 +287,8 @@ uint8_t GPIO::spiTransferByte(int spi_fdAux, uint8_t tx_byte) {
     uint8_t tx_data = tx_byte;
     uint8_t rx_data = 0;
     
-    xfer.tx_buf = (unsigned long)&tx_data;
-    xfer.rx_buf = (unsigned long)&rx_data;
+    xfer.tx_buf = reinterpret_cast<uint64_t>(&tx_data);
+	xfer.rx_buf = reinterpret_cast<uint64_t>(&rx_data);
     xfer.len = 1;
     
     int ret = ioctl(spi_fdAux, SPI_IOC_MESSAGE(1), &xfer);
