@@ -52,7 +52,7 @@ public: //Variables
 		APPLICATION_EXIT = -1,
 	    };
 	// SPI communications
-	int spi_fd; // SPI file descriptor
+	
 
 private:// Variables
 	ApplicationState m_state;
@@ -129,6 +129,7 @@ private:// Variables
     const float RATIO = (MAX_V - MIN_V) / 255.0;
     // SPI communications
 	float currentSPIvalue=MIN_V; // In volts // Initial value and follow up values storage
+	int spi_fd; // SPI file descriptor
 
 public:	// Functions/Methods
 	// PRU

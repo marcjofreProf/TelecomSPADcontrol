@@ -181,7 +181,7 @@ GPIO::GPIO(){// Redeclaration of constructor GPIOspadSYScont when no argument is
 	// Initiate SPI communications
 	const char* spi_device = "/dev/spidev1.0";  // SPI1 bus, CS0
 	// Open SPI device
-	int spi_fd = open(spi_device, O_RDWR);
+	spi_fd = open(spi_device, O_RDWR);
 	//printf("CONFIG fd = %d\n", spi_fd);
 	if (spi_fd < 0) {
 	    cout << "Failed to open SPI device" << endl;
