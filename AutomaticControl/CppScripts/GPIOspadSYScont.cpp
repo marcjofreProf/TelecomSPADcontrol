@@ -895,13 +895,16 @@ return 0; // All ok
 
 int GPIO::KillcodePRUs(){
 	if (prussdrv_exec_program(PRU_Signal_NUM, "./CppScripts/PRUkillSignal1.bin") == -1){
-		perror("prussdrv_exec_program non successfull writing of PRUkillSignal1.bin");
+		if (prussdrv_exec_program(PRU_Signal_NUM, "./PRUkillSignal1.bin") == -1){
+			perror("prussdrv_exec_program non successfull writing of PRUkillSignal1.bin");
+		}
 	}
 
 	if (prussdrv_exec_program(PRU_Operation_NUM, "./CppScripts/PRUkillSignal0.bin") == -1){
-		perror("prussdrv_exec_program non successfull writing of PRUkillSignal0.bin");
+		if (prussdrv_exec_program(PRU_Operation_NUM, "./PRUkillSignal0.bin") == -1){
+			perror("prussdrv_exec_program non successfull writing of PRUkillSignal0.bin");
+		}
 	}	
-	sleep(2); // Give time to load to the PRU memory
 return 0;
 }
 
@@ -919,7 +922,7 @@ GPIO::~GPIO() { // Destructor
 	// Finish with lowering the bias voltage  
 	spiTransferByte(spi_fd, 0xFF); // Set final value
 	cout << "Exit GPIOspadSYScont done!" << endl;
-//	this->unexportGPIO();
+	sleep(2); // Give time to load to the PRU memory and send the values to spi
 	close(spi_fd); // Close SPI file descriptor
 	this->threadRefSynch.join();	
 	this->DisablePRUs();
