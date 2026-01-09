@@ -921,7 +921,7 @@ GPIO::~GPIO() { // Destructor
 	cout << "Exiting GPIOspadSYScont..." << endl;
 	// Finish with lowering the bias voltage  
 	spiTransferByte(spi_fd, 0xFF); // Set final value	
-	sleep(2); // Give time to load to the PRU memory and send the values to spi
+	sleep(0.5); // Give time to load to the PRU memory and send the values to spi
 	close(spi_fd); // Close SPI file descriptor
 	this->threadRefSynch.join();	
 	this->DisablePRUs();
@@ -950,15 +950,17 @@ int main(int argc, char const * argv[]){
  //printf( "argc:     %d\n", argc );
  //printf( "argv[0]:  %s\n", argv[0] );
  
- //if ( argc == 1 ) {
- // printf( "No arguments were passed.\n" );
- //}
- //else{
- // printf( "Arguments:\n" );
- // for (int i = 1; i < argc; ++i ) {
- //  printf( "  %d. %s\n", i, argv[i] );
- // }
- //}
+ float initialDesiredDCvoltage=55.0;
+ if ( argc == 1 ) {
+ 	cout << "No arguments were passed!" << endl;
+ }
+ else{
+	 //cout << "Arguments" << endl;
+	 //for (int i = 1; i < argc; ++i ) {
+	 //	printf( "  %d. %s\n", i, argv[i] );
+	 //}
+ 	initialDesiredDCvoltage=stof(argv[1]);
+ }
  
  cout << "GPIOspadSYScont started..." << endl;
  
@@ -977,7 +979,7 @@ int main(int argc, char const * argv[]){
  
  //CKPDagent.GenerateSynchClockPRU();// Launch the generation of the clock
  // First initial volage bias up
- GPIOagent.SPIrampVoltage(GPIOagent.spi_fd, 57.0, 2.0, true);
+ GPIOagent.SPIrampVoltage(GPIOagent.spi_fd, initialDesiredDCvoltage, 2.0, true);
  GPIOagent.SendControlSignals();
  
  while(isValidWhileLoop && !signalReceivedFlag.load()){ 

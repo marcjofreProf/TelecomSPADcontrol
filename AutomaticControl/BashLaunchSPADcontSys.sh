@@ -188,7 +188,10 @@ sudo config-pin p9_29 spi
 sudo config-pin p9_30 spi
 sudo config-pin p9_31 spi_sclk
 
-sudo nice -n $NicenestPriorValue ./CppScripts/GPIOspadSYScont &
+// Actual cpp automatic control program
+# Pass arguments
+# Initial DC voltage value (e.g., 55.0) with decimal values
+sudo nice -n $NicenestPriorValue ./CppScripts/GPIOspadSYScont 55.0 &
 
 : << 'COMMENT'
 ## Update process priority values
