@@ -421,7 +421,7 @@ int GPIO::HandleInterruptPRUs(){ // Uses output pins to clock subsystems physica
 
 //ReadTimeCounts();
 // TODO: Do calculations with the counts retrieved
-//SendControlSignals();
+//SendControlSignals(); // Already launched at the beggining
 
 return 0;// All ok
 }
@@ -450,10 +450,11 @@ int GPIO::ReadTimeCounts(){// Read the SPADs associated counters
 }
 
 int GPIO::SendControlSignals(){	
-	pru1dataMem_int[0]=static_cast<unsigned int>(1); // set command. Generate signals. Takes around 900000 clock ticks
+	pru1dataMem_int[0]=static_cast<unsigned int>(1); // set command. Generate signals.
 	prussdrv_pru_send_event(22);//Send host arm to PRU1 interrupt
 	// Here there should be the instruction command to tell PRU1 to start generating signals
 	// We have to define a command, compatible with the memory space of PRU0 to tell PRU1 to initiate signals
+	/*
 	//  PRU long execution making sure that notification interrupts do not overlap
 	int retInterruptsPRU1=prussdrv_pru_wait_event_timeout(PRU_EVTOUT_1,WaitTimeInterruptPRU1);
 
@@ -469,6 +470,7 @@ int GPIO::SendControlSignals(){
 		prussdrv_pru_clear_event(PRU_EVTOUT_1, PRU1_ARM_INTERRUPT);// So it has time to clear the interrupt for the later iterations
 		cout << "PRU1 interrupt error" << endl;
 	}
+	*/
 return 0;// all ok	
 }
 
@@ -978,6 +980,7 @@ int main(int argc, char const * argv[]){
  //CKPDagent.GenerateSynchClockPRU();// Launch the generation of the clock
  // First initial volage bias up
  GPIOagent.SPIrampVoltage(GPIOagent.spi_fd, 55.0, 2.0, true);
+ GPIOagent.SendControlSignals();
  
  while(isValidWhileLoop && !signalReceivedFlag.load()){ 
  	//CKPDagent.acquire();

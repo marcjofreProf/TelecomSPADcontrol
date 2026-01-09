@@ -145,6 +145,7 @@ public:	// Functions/Methods
     bool m_resume() { m_state = APPLICATION_RUNNING; return true; }      
     bool m_exit() { m_state = APPLICATION_EXIT;  return false; }
 	int InitAgentProcess();
+	int SendControlSignals(); // Write the AC Geiger signals (Frequency, duty cycle...)Uses output pins to clock subsystems physically generating qubits or entangled qubits
 	int LOCAL_DDMinit();	
 	int DisablePRUs();
 	int HandleInterruptPRUs(); // Main call function to manage the operation in/out of the PRUs
@@ -165,7 +166,6 @@ private: // Functions/Methods
 	// Data processing
 	int DDRdumpdata();
 	int ReadTimeCounts();// Read the associated SPAD counters
-	int SendControlSignals(); // Write the AC Geiger signals (Frequency, duty cycle...)Uses output pins to clock subsystems physically generating qubits or entangled qubits
 	// Mean filter
 	long double LongDoubleMeanFilterSubArray(long double* ArrayHolderAux,int MeanFilterFactor);
 	int IntMeanFilterSubArray(int* ArrayHolderAux,int MeanFilterFactor);
