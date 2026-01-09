@@ -79,7 +79,7 @@ unsigned int* exploringBB::GPIO::pru0dataMem_int = nullptr;// Define and initial
 unsigned int* exploringBB::GPIO::pru1dataMem_int = nullptr;// Define and initialize
 int exploringBB::GPIO::mem_fd = -1;// Define and initialize 
 
-GPIO::GPIO():emergencyStop(false){// Redeclaration of constructor GPIOspadSYScont when no argument is specified
+GPIO::GPIO(){// Redeclaration of constructor GPIOspadSYScont when no argument is specified
 	// Some variable initialization
 	// Initialize structure used by prussdrv_pruintc_intc
 	// PRUSS_INTC_INITDATA is found in pruss_intc_mapping.h
@@ -985,7 +985,7 @@ int main(int argc, char const * argv[]){
  // First initial volage bias up
  GPIOagent.currentSPIvalue=GPIOagent.SPIrampVoltage(GPIOagent.spi_fd, 55, 2.0, true);
  
- while(isValidWhileLoop){ 
+ while(isValidWhileLoop && !signalReceivedFlag.load()){ 
  	//CKPDagent.acquire();
    //try{
  	//try {
@@ -1011,7 +1011,7 @@ int main(int argc, char const * argv[]){
 
         } // switch
         
-	if (signalReceivedFlag.load()){GPIOagent.~GPIO();}// Destroy the instance
+	//if (signalReceivedFlag.load()){GPIOagent.~GPIO();}// Destroy the instance
     GPIOagent.RelativeNanoSleepWait((unsigned int)(WaitTimeAfterMainWhileLoop));
         
     //}

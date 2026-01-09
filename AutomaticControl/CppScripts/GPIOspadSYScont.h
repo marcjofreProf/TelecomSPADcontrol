@@ -53,7 +53,7 @@ public: //Variables
 	    };
 	   // SPI communications
 	int spi_fd; // SPI file descriptor
-	float currentSPIvalue=40.0; // In volts // Initial value and follow up values storage
+	float currentSPIvalue=39.0; // In volts // Initial value and follow up values storage
 
 private:// Variables
 	ApplicationState m_state;
@@ -64,7 +64,6 @@ private:// Variables
 	unsigned long long int UnTrapSemaphoreValueMaxCounter=1000;//MAx counter trying to acquire semaphore, then force release
 	int whileProtAuxMax=10000; // Value of protecton against blocking indefenitely, which produces the node to go down (broken pipe and re-start)
 	int whileProtAux=whileProtAuxMax; // Protection againts blocking indefinetely
-	std::atomic<bool> emergencyStop{false};
 	std::atomic<bool> valueSemaphore{true};// Start as 1 (open or acquireable)
 	std::atomic<bool> ManualSemaphore{false};
 	std::atomic<bool> ManualSemaphoreExtra{false};
