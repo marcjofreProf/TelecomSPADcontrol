@@ -79,7 +79,7 @@ unsigned int* exploringBB::GPIO::pru0dataMem_int = nullptr;// Define and initial
 unsigned int* exploringBB::GPIO::pru1dataMem_int = nullptr;// Define and initialize
 int exploringBB::GPIO::mem_fd = -1;// Define and initialize 
 
-GPIO::GPIO(){// Redeclaration of constructor GPIOspadSYScont when no argument is specified
+GPIO::GPIO():emergencyStop(false){// Redeclaration of constructor GPIOspadSYScont when no argument is specified
 	// Some variable initialization
 	// Initialize structure used by prussdrv_pruintc_intc
 	// PRUSS_INTC_INITDATA is found in pruss_intc_mapping.h
