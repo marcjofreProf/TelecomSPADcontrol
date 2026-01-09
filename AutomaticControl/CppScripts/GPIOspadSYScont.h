@@ -150,7 +150,7 @@ public:	// Functions/Methods
 	int RelativeNanoSleepWait(unsigned int TimeNanoSecondsSleep);
 	~GPIO();  //destructor
 	// For SPI communications
-	float SPIrampVoltage(int spi_fdAux, float desired_voltage, float max_rate, bool verbose);
+	int SPIrampVoltage(int spi_fdAux, float desired_voltage, float max_rate, bool verbose);
 
 private: // Functions/Methods
 	int KillcodePRUs();
@@ -162,7 +162,6 @@ private: // Functions/Methods
 	// PRU synchronization
 	struct timespec SetWhileWait();	
 	// Data processing
-	unsigned short packBits(unsigned short value);
 	int DDRdumpdata();
 	int ReadTimeCounts();// Read the associated SPAD counters
 	int SendControlSignals(); // Write the AC Geiger signals (Frequency, duty cycle...)Uses output pins to clock subsystems physically generating qubits or entangled qubits

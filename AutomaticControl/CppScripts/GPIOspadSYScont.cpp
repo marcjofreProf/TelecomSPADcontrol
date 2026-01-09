@@ -213,6 +213,7 @@ GPIO::GPIO(){// Redeclaration of constructor GPIOspadSYScont when no argument is
 	std::cout << "  Bits per word: " << (int)bits_per_word << std::endl;
 	std::cout << "  Speed: " << spi_speed << " Hz" << std::endl;
 
+	currentSPIvalue = MIN_V; // Set initial voltage to minimum
 	spiTransferByte(spi_fd,0xFF); // Set initial value
 }
 
@@ -293,95 +294,90 @@ uint8_t GPIO::spiTransferByte(int spi_fdAux, uint8_t tx_byte) {
 
 
 // Function to ramp SPI voltage to desired value beggining from the current SPI value
-float GPIO::SPIrampVoltage(int spi_fdAux, float desired_voltage, float max_rate, bool verbose) {
+int GPIO::SPIrampVoltage(int spi_fdAux, float desired_voltage, float max_rate, bool verbose) {
     
-    // Clear terminal
-    if (verbose) {
-        cout << "\033[2J\033[1;1H";
-    }    
+    if (verbose) cout << "\033[2J\033[1;1H";
     
-    // Get current voltage from class member
-    float current_voltage = this->currentSPIvalue;
+    // Validate input
+    if (desired_voltage < MIN_V || desired_voltage > MAX_V) return -1;
+    if (max_rate <= 0) return -2;
     
-    // If already at target voltage (within 0.1V tolerance)
-    if (fabs(current_voltage - desired_voltage) < 0.1) {
-        // Convert to SPI and send
-        int spi_val = 255 - (int)((desired_voltage - MIN_V) / RATIO);
-        if (spi_val < 0) spi_val = 0;
-        if (spi_val > 255) spi_val = 255;
+    // Check if already at target (within 0.25V tolerance)
+    if (fabs(currentSPIvalue - desired_voltage) < 0.25) {
+        int target_spi = 256 - (int)((desired_voltage - MIN_V) / RATIO);
+        if (target_spi < 0) target_spi = 0;
+        if (target_spi > 255) target_spi = 255;
         
-        spiTransferByte(spi_fdAux, (uint8_t)spi_val);
-        
-        if (verbose) {
-            cout << "At target: " << desired_voltage << "V" << endl;
-        }
-        
-        // Update and return current voltage
-        this->currentSPIvalue = desired_voltage;
-        return desired_voltage;
+        spiTransferByte(spi_fdAux, (uint8_t)target_spi);
+        currentSPIvalue = desired_voltage;
+        if (verbose) cout << "At target: " << desired_voltage << "V" << endl;
+        return 0;
     }
     
-    // Calculate ramp parameters
-    float voltage_diff = desired_voltage - current_voltage;
+    // Convert voltages to SPI values
+    int current_spi = 256 - (int)((currentSPIvalue - MIN_V) / RATIO);
+    int target_spi = 256 - (int)((desired_voltage - MIN_V) / RATIO);
     
-    // Fixed number of steps
-    int steps = 50;
+    // Clamp
+    if (current_spi < 0) current_spi = 0;
+    if (current_spi > 255) current_spi = 255;
+    if (target_spi < 0) target_spi = 0;
+    if (target_spi > 255) target_spi = 255;
     
-    // Calculate step time based on max rate
-    float total_time = fabs(voltage_diff) / max_rate;
-    useconds_t step_time = (useconds_t)((total_time / steps) * 1000000);
+    // Python algorithm calculations
+    float step_range = (90.0 - 40.0) / 255.0;
+    float decimation = 10.0;
+    
+    int spi_range = abs(target_spi - current_spi);
+    int steps = (int)round(spi_range / step_range / decimation);
+    if (steps < 1) steps = 1;
+    
+    float step_time = (step_range / max_rate) * decimation * 1000000;
     
     if (verbose) {
-        cout << "Ramping: " << current_voltage << "V -> " << desired_voltage << "V" << endl;
+        cout << "Ramping: " << currentSPIvalue << "V -> " << desired_voltage << "V" << endl;
+        cout << "Steps: " << steps << " | Time: " << (step_time * steps / 1000000.0) << "s" << endl;
         cout << "[";
     }
     
-    // Perform the voltage ramp
+    // Perform ramp
     for (int i = 0; i <= steps; i++) {
-        // Calculate current voltage
-        float t = (float)i / steps;
-        float voltage = current_voltage + (t * voltage_diff);
+        if (signalReceivedFlag.load()) return -3;
         
-        // Convert voltage to SPI
-        int spi_val = 255 - (int)((voltage - MIN_V) / RATIO);
+        float t = (float)i / steps;
+        int spi_val = current_spi + (int)(t * (target_spi - current_spi));
+        if (i == steps) spi_val = target_spi;
+        
         if (spi_val < 0) spi_val = 0;
         if (spi_val > 255) spi_val = 255;
         
-        // Send SPI value
         spiTransferByte(spi_fdAux, (uint8_t)spi_val);
         
-        // Update class member
-        this->currentSPIvalue = voltage;
+        float voltage = MIN_V + (RATIO * (255 - spi_val));
+        currentSPIvalue = voltage;
         
-        // Show progress bar
         if (verbose) {
             int percent = (i * 100) / steps;
             cout << "\r[";
-            int width = 40;
-            int pos = (percent * width) / 100;
-            for (int j = 0; j < width; j++) {
-                if (j < pos) cout << "=";
-                else if (j == pos) cout << ">";
+            for (int j = 0; j < 40; j++) {
+                if (j < percent * 40 / 100) cout << "=";
+                else if (j == percent * 40 / 100) cout << ">";
                 else cout << " ";
             }
             cout << "] " << percent << "% (" << voltage << "V)";
             cout.flush();
         }
         
-        // Wait between steps
-        if (i < steps) {
-            usleep(step_time);
-        }
+        if (i < steps) usleep((useconds_t)step_time);
     }
     
     if (verbose) {
-    	cout << "\r\033[K";  // Clear the entire line first
+        cout << "\r\033[K";
         cout << "\r[========================================] 100% (" << desired_voltage << "V)" << endl;
     }
     
-    // Ensure final value is exact and return it
-    this->currentSPIvalue = desired_voltage;
-    return desired_voltage;
+    currentSPIvalue = desired_voltage;
+    return 0;
 }
 //////////////////////////////////////////////
 struct timespec GPIO::SetWhileWait(){
