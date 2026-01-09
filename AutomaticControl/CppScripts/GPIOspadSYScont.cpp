@@ -920,6 +920,13 @@ int GPIO::DisablePRUs(){
 }
 
 GPIO::~GPIO() { // Destructor
+	cout << "Exiting GPIOspadSYScont..." << endl;
+
+	  // Finish with lowering the bias voltage
+	  currentSPIvalue=SPIrampVoltage(spi_fd, MIN_V, 2.0, true);
+	  
+	  cout << "Exit GPIOspadSYScont done!" << endl;
+
 //	this->unexportGPIO();
 	close(spi_fd); // Close SPI file descriptor
 	this->threadRefSynch.join();
@@ -1019,11 +1026,6 @@ int main(int argc, char const * argv[]){
 	//CKPDagent.release();
 	//CKPDagent.RelativeNanoSleepWait((unsigned int)(WaitTimeAfterMainWhileLoop));
     } // while
-  cout << "Exiting GPIOspadSYScont..." << endl;
-
-  // Finish with lowering the bias voltage
-  GPIOagent.currentSPIvalue=GPIOagent.SPIrampVoltage(GPIOagent.spi_fd, 40.0, 2.0, true);
   
-  cout << "Exit GPIOspadSYScont done!" << endl;
  return 0; // Everything Ok
 }

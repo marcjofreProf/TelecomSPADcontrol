@@ -124,7 +124,10 @@ private:// Variables
 	unsigned long long int extendedCounterPRUaux=0; // 64 bits
 
 	// SPI communication
-	
+	// Voltage to SPI conversion constants
+    const float MIN_V = 39.5;
+    const float MAX_V = 88.7;
+    const float RATIO = (MAX_V - MIN_V) / 255.0;
 
 public:	// Functions/Methods
 	// PRU
@@ -177,11 +180,7 @@ private: // Functions/Methods
 	int DoubleBubbleSort(double* arr,int MedianFilterFactor);
 	int IntBubbleSort(int* arr,int MedianFilterFactor);
 	// SPI communications
-	uint8_t spiTransferByte(int spi_fdAux, uint8_t tx_byte);
-	// Voltage to SPI conversion constants
-    const float MIN_V = 39.5;
-    const float MAX_V = 88.7;
-    const float RATIO = (MAX_V - MIN_V) / 255.0;	
+	uint8_t spiTransferByte(int spi_fdAux, uint8_t tx_byte);		
 };
 
 } /* namespace exploringBB */
