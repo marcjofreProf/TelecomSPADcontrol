@@ -78,4 +78,4 @@ for value in tqdm.tqdm(range(0,len(values_apply),1)):
 # Close SPI
 spi.close()
 
-print("Telecom SPAD voltage ramp completed.")
+print("Telecom SPAD voltage ramp down completed.")

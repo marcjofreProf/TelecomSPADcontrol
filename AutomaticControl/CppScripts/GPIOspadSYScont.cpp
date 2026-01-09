@@ -283,13 +283,22 @@ uint8_t GPIO::spiTransferByte(int spi_fdAux, uint8_t tx_byte) {
     
     memset(&xfer, 0, sizeof(xfer));
     
-    xfer.tx_buf = (unsigned long)&tx_byte;
-    xfer.rx_buf = (unsigned long)&rx_byte;
+    // Create local copies that will stay in scope
+    uint8_t tx_data = tx_byte;
+    uint8_t rx_data = 0;
+    
+    xfer.tx_buf = (unsigned long)&tx_data;
+    xfer.rx_buf = (unsigned long)&rx_data;
     xfer.len = 1;
     
-    ioctl(spi_fdAux, SPI_IOC_MESSAGE(1), &xfer);
+    int ret = ioctl(spi_fdAux, SPI_IOC_MESSAGE(1), &xfer);
     
-    return rx_byte;
+    if (ret < 0) {
+        perror("SPI transfer failed");
+        // Handle error
+    }
+    
+    return rx_data;
 }
 
 
