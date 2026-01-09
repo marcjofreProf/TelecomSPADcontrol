@@ -215,7 +215,7 @@ GPIO::GPIO(){// Redeclaration of constructor GPIOspadSYScont when no argument is
 	std::cout << "  Bits per word: " << (int)bits_per_word << std::endl;
 	std::cout << "  Speed: " << spi_speed << " Hz" << std::endl;
 
-	spiTransferByte(0xFF); // Set initial value
+	spiTransferByte(spi_fd, 0xFF); // Set initial value
 }
 
 int GPIO::InitAgentProcess(){
@@ -278,16 +278,16 @@ this->valueSemaphore.store(true,std::memory_order_release); // Make sure it stay
 }
 //////////////////////////////////////////////
 // SPI communicatoin operations
-uint8_t GPIO::spiTransferByte(uint8_t tx){
+uint8_t GPIO::spiTransferByte(int spi_fdAux, uint8_t tx){
     uint8_t rx = 0;
     spi_ioc_transfer tr{};
-    //printf("XFER fd = %d\n", spi_fd);
+    //printf("XFER fd = %d\n", spi_fdAux);
     tr.tx_buf = reinterpret_cast<uint64_t>(&tx);
     tr.rx_buf = reinterpret_cast<uint64_t>(&rx);
     tr.len = 1;
     tr.bits_per_word = 8;
 
-    int ret = ioctl(spi_fd, SPI_IOC_MESSAGE(1), &tr);
+    int ret = ioctl(spi_fdAux, SPI_IOC_MESSAGE(1), &tr);
     if (ret != 1) {
         perror("SPI_IOC_MESSAGE");
     }
@@ -297,7 +297,7 @@ uint8_t GPIO::spiTransferByte(uint8_t tx){
 
 
 // Function to ramp SPI voltage to desired value beggining from the current SPI value
-int GPIO::SPIrampVoltage(float desired_voltage, float max_rate, bool verbose) {
+int GPIO::SPIrampVoltage(int spi_fdAux, float desired_voltage, float max_rate, bool verbose) {
     
     if (verbose) cout << "\033[2J\033[1;1H";
     
@@ -349,7 +349,7 @@ int GPIO::SPIrampVoltage(float desired_voltage, float max_rate, bool verbose) {
         if (spi_val < 0) spi_val = 0;
         if (spi_val > 255) spi_val = 255;
         
-        spiTransferByte((uint8_t)0xAF);//spi_val);
+        spiTransferByte(spi_fdAux,(uint8_t)spi_val);
         //cout << "spi_val: 0x" << hex << spi_val << dec << endl;
         
         float voltage = MIN_V + (RATIO * (255 - spi_val));
@@ -368,7 +368,6 @@ int GPIO::SPIrampVoltage(float desired_voltage, float max_rate, bool verbose) {
         }
         
         if (i < steps) usleep((useconds_t)step_time);
-        spiTransferByte((uint8_t)0xFF);//spi_val);
     }
     
     if (verbose) {
@@ -918,7 +917,7 @@ int GPIO::DisablePRUs(){
 GPIO::~GPIO() { // Destructor
 	cout << "Exiting GPIOspadSYScont..." << endl;
 	// Finish with lowering the bias voltage
-	SPIrampVoltage(MIN_V, 2.0, false);	  
+	SPIrampVoltage(spi_fd, MIN_V, 2.0, false);	  
 	cout << "Exit GPIOspadSYScont done!" << endl;
 
 //	this->unexportGPIO();
@@ -977,7 +976,7 @@ int main(int argc, char const * argv[]){
  
  //CKPDagent.GenerateSynchClockPRU();// Launch the generation of the clock
  // First initial volage bias up
- GPIOagent.SPIrampVoltage(55.0, 2.0, true);
+ GPIOagent.SPIrampVoltage(GPIOagent.spi_fd, 55.0, 2.0, true);
  
  while(isValidWhileLoop && !signalReceivedFlag.load()){ 
  	//CKPDagent.acquire();
