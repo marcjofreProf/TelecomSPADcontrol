@@ -16,6 +16,7 @@ Script for PRU real-time handling of multi SPAD system
 #include<cstdlib>
 #include<cstring> // For memset
 #include<cstdint> // for SPI data
+#include<iomanip>
 #include<cstdio>
 #include<fcntl.h>
 #include<unistd.h>
