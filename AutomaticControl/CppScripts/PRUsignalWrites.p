@@ -23,8 +23,6 @@
 #define INS_PER_US		200		// 5ns per instruction for Beaglebone black
 #define INS_PER_DELAY_LOOP	2		// two instructions per delay loop
 #define NUM_REPETITIONS		1024	//Not used 4294967295	// Maximum value possible storable to limit the number of cycles in 32 bits register. This is wuite limited in number but very controllable (maybe more than one register can be used). This defines the Maximum Transmission Unit - coul dbe named Quantum MTU (defined together with the clock)
-#define DELAYMODULE	4096// Slightly above the std jitter of the 24 MHz hardware clock//65536 // Not used. The whole histogram period. It has to be divisible by the 2^32 total clock register.
-#define DELAYHALFMODULE	4095//65535 // Not used. One unit less than DELAYMODULE the power of two required of the period of the histogram which is 65535-1=2^16-1.
 
 // Refer to this mapping in the file - pruss_intc_mapping.h
 #define PRU0_PRU1_INTERRUPT     17
@@ -114,8 +112,8 @@ INITIATIONS:
 	LDI	r4, 0 // zeroing
 	MOV	r1, NUM_REPETITIONS// Initial initialization jus tin case// Cannot be done with LDI instruction because it may be a value larger than 65535. load r3 with the number of cycles. For the time being only up to 65535 ->develop so that it can be higher
 	LDI	r0, 0 // Ensure reset commands
-	LDI	r14, 10 // ON state
-	LDI	r15, 30 // OFF state
+	LDI	r14, 20 // ON state
+	LDI	r15, 60 // OFF state
 	
 //	LED_ON	// just for signaling initiations
 //	LED_OFF	// just for signaling initiations
