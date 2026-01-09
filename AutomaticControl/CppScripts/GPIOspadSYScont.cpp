@@ -894,16 +894,12 @@ return 0; // All ok
 }
 
 int GPIO::KillcodePRUs(){
-	if (prussdrv_exec_program(PRU_Signal_NUM, "./CppScripts/BBBhw/PRUkillSignal1.bin") == -1){//if (prussdrv_exec_program(PRU_Signal_NUM, "./CppScripts/BBBhw/PRUassTrigSigScript.bin") == -1){
-		if (prussdrv_exec_program(PRU_Signal_NUM, "./BBBhw/PRUkillSignal1.bin") == -1){//if (prussdrv_exec_program(PRU_Signal_NUM, "./BBBhw/PRUassTrigSigScript.bin") == -1){
-			perror("prussdrv_exec_program non successfull writing of PRUkillSignal1.bin");//perror("prussdrv_exec_program non successfull writing of PRUassTrigSigScript.bin");
-		}
+	if (prussdrv_exec_program(PRU_Signal_NUM, "./CppScripts/PRUkillSignal1.bin") == -1){
+		perror("prussdrv_exec_program non successfull writing of PRUkillSignal1.bin");
 	}
 
-	if (prussdrv_exec_program(PRU_Operation_NUM, "./CppScripts/BBBhw/PRUkillSignal0.bin") == -1){//if (prussdrv_exec_program(PRU_Signal_NUM, "./CppScripts/BBBhw/PRUassTrigSigScript.bin") == -1){
-		if (prussdrv_exec_program(PRU_Operation_NUM, "./BBBhw/PRUkillSignal0.bin") == -1){//if (prussdrv_exec_program(PRU_Signal_NUM, "./BBBhw/PRUassTrigSigScript.bin") == -1){
-			perror("prussdrv_exec_program non successfull writing of PRUkillSignal0.bin");//perror("prussdrv_exec_program non successfull writing of PRUassTrigSigScript.bin");
-		}
+	if (prussdrv_exec_program(PRU_Operation_NUM, "./CppScripts/PRUkillSignal0.bin") == -1){
+		perror("prussdrv_exec_program non successfull writing of PRUkillSignal0.bin");
 	}	
 	sleep(2); // Give time to load to the PRU memory
 return 0;
