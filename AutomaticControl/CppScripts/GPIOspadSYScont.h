@@ -51,7 +51,8 @@ public: //Variables
 		APPLICATION_PAUSED = 1,  // Out of Focus or Paused If In A Timed Situation
 		APPLICATION_EXIT = -1,
 	    };
-	
+	// SPI communications
+	int spi_fd; // SPI file descriptor
 
 private:// Variables
 	ApplicationState m_state;
@@ -126,8 +127,7 @@ private:// Variables
     const float MIN_V = 39.5;
     const float MAX_V = 88.7;
     const float RATIO = (MAX_V - MIN_V) / 255.0;
-      // SPI communications
-	int spi_fd; // SPI file descriptor
+    // SPI communications
 	float currentSPIvalue=MIN_V; // In volts // Initial value and follow up values storage
 
 public:	// Functions/Methods
