@@ -14,6 +14,7 @@ Script for PRU real-time handling of multi SPAD system
 #include<string>
 #include<sstream> // For istringstream
 #include<cstdlib>
+#include<cstring> // For memset
 #include<cstdio>
 #include<fcntl.h>
 #include<unistd.h>
@@ -211,6 +212,8 @@ GPIO::GPIO(){// Redeclaration of constructor GPIOspadSYScont when no argument is
 	std::cout << "  Mode: " << (int)spi_mode << std::endl;
 	std::cout << "  Bits per word: " << (int)bits_per_word << std::endl;
 	std::cout << "  Speed: " << spi_speed << " Hz" << std::endl;
+
+	spiTransferByte(spi_fd,0xFF); // Set initial value
 }
 
 int GPIO::InitAgentProcess(){
@@ -270,6 +273,115 @@ this->valueSemaphore=0; // Make sure it stays at 0
 void GPIO::release() {
 this->valueSemaphore.store(true,std::memory_order_release); // Make sure it stays at 1
 //this->valueSemaphore.fetch_add(1,std::memory_order_release);
+}
+//////////////////////////////////////////////
+// SPI communicatoin operations
+uint8_t GPIO::spiTransferByte(int spi_fdAux, uint8_t tx_byte) {
+    struct spi_ioc_transfer xfer;
+    uint8_t rx_byte;
+    
+    memset(&xfer, 0, sizeof(xfer));
+    
+    xfer.tx_buf = (unsigned long)&tx_byte;
+    xfer.rx_buf = (unsigned long)&rx_byte;
+    xfer.len = 1;
+    
+    ioctl(spi_fdAux, SPI_IOC_MESSAGE(1), &xfer);
+    
+    return rx_byte;
+}
+
+
+// Function to ramp SPI voltage to desired value beggining from the current SPI value
+float GPIO::SPIrampVoltage(int spi_fdAux, float desired_voltage, float max_rate, bool verbose) {
+    
+    // Clear terminal
+    if (verbose) {
+        cout << "\033[2J\033[1;1H";
+    }    
+    
+    // Get current voltage from class member
+    float current_voltage = this->currentSPIvalue;
+    
+    // If already at target voltage (within 0.1V tolerance)
+    if (fabs(current_voltage - desired_voltage) < 0.1) {
+        // Convert to SPI and send
+        int spi_val = 255 - (int)((desired_voltage - MIN_V) / RATIO);
+        if (spi_val < 0) spi_val = 0;
+        if (spi_val > 255) spi_val = 255;
+        
+        spiTransferByte(spi_fdAux, (uint8_t)spi_val);
+        
+        if (verbose) {
+            cout << "At target: " << desired_voltage << "V" << endl;
+        }
+        
+        // Update and return current voltage
+        this->currentSPIvalue = desired_voltage;
+        return desired_voltage;
+    }
+    
+    // Calculate ramp parameters
+    float voltage_diff = desired_voltage - current_voltage;
+    
+    // Fixed number of steps
+    int steps = 50;
+    
+    // Calculate step time based on max rate
+    float total_time = fabs(voltage_diff) / max_rate;
+    useconds_t step_time = (useconds_t)((total_time / steps) * 1000000);
+    
+    if (verbose) {
+        cout << "Ramping: " << current_voltage << "V -> " << desired_voltage << "V" << endl;
+        cout << "[";
+    }
+    
+    // Perform the voltage ramp
+    for (int i = 0; i <= steps; i++) {
+        // Calculate current voltage
+        float t = (float)i / steps;
+        float voltage = current_voltage + (t * voltage_diff);
+        
+        // Convert voltage to SPI
+        int spi_val = 255 - (int)((voltage - MIN_V) / RATIO);
+        if (spi_val < 0) spi_val = 0;
+        if (spi_val > 255) spi_val = 255;
+        
+        // Send SPI value
+        spiTransferByte(spi_fdAux, (uint8_t)spi_val);
+        
+        // Update class member
+        this->currentSPIvalue = voltage;
+        
+        // Show progress bar
+        if (verbose) {
+            int percent = (i * 100) / steps;
+            cout << "\r[";
+            int width = 40;
+            int pos = (percent * width) / 100;
+            for (int j = 0; j < width; j++) {
+                if (j < pos) cout << "=";
+                else if (j == pos) cout << ">";
+                else cout << " ";
+            }
+            cout << "] " << percent << "% (" << voltage << "V)";
+            cout.flush();
+        }
+        
+        // Wait between steps
+        if (i < steps) {
+            usleep(step_time);
+        }
+    }
+    
+    if (verbose) {
+        cout << "\r[========================================] 100% (" << desired_voltage << "V)" << endl;
+        cout << "Ramping complete!" << endl;
+    }
+    
+    // Ensure final value is exact and return it
+    this->currentSPIvalue = desired_voltage;
+    return desired_voltage;
 }
 //////////////////////////////////////////////
 struct timespec GPIO::SetWhileWait(){
@@ -864,6 +976,7 @@ int main(int argc, char const * argv[]){
  
  //CKPDagent.GenerateSynchClockPRU();// Launch the generation of the clock
  // First initial volage bias up
+ GPIOagent.currentSPIvalue=GPIOagent.SPIrampVoltage(GPIOagent.spi_fd, 55, 2.0, true);
  
  while(isValidWhileLoop){ 
  	//CKPDagent.acquire();
@@ -909,7 +1022,7 @@ int main(int argc, char const * argv[]){
   cout << "Exiting GPIOspadSYScont..." << endl;
 
   // Finish with lowering the bias voltage
-
+  GPIOagent.currentSPIvalue=GPIOagent.SPIrampVoltage(GPIOagent.spi_fd, 40.0, 2.0, true);
   
   cout << "Exit GPIOspadSYScont done!" << endl;
  return 0; // Everything Ok
