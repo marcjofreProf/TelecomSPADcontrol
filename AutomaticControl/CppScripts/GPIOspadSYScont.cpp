@@ -182,6 +182,7 @@ GPIO::GPIO(){// Redeclaration of constructor GPIOspadSYScont when no argument is
 	const char* spi_device = "/dev/spidev1.0";  // SPI1 bus, CS0
 	// Open SPI device
 	int spi_fd = open(spi_device, O_RDWR);
+	printf("CONFIG fd = %d\n", spi_fd);
 	if (spi_fd < 0) {
 	    cout << "Failed to open SPI device" << endl;
 	}
@@ -281,7 +282,7 @@ this->valueSemaphore.store(true,std::memory_order_release); // Make sure it stay
 uint8_t GPIO::spiTransferByte(int spi_fdAux, uint8_t tx){
     uint8_t rx = 0;
     spi_ioc_transfer tr{};
-
+    printf("XFER fd = %d\n", spi_fdAux);
     tr.tx_buf = reinterpret_cast<uint64_t>(&tx);
     tr.rx_buf = reinterpret_cast<uint64_t>(&rx);
     tr.len = 1;
