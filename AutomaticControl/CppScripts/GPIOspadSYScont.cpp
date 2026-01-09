@@ -216,7 +216,7 @@ GPIO::GPIO(){// Redeclaration of constructor GPIOspadSYScont when no argument is
 	std::cout << "  Speed: " << spi_speed << " Hz" << std::endl;
 
 	currentSPIvalue = MIN_V; // Set initial voltage to minimum
-	spiTransferByte(spi_fd,0xFF); // Set initial value
+	spiTransferByte(spi_fd,0xAF); // Set initial value
 }
 
 int GPIO::InitAgentProcess(){
