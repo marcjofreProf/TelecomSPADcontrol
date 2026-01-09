@@ -293,7 +293,7 @@ uint8_t GPIO::spiTransferByte(int spi_fdAux, uint8_t tx_byte) {
     
     int ret = ioctl(spi_fdAux, SPI_IOC_MESSAGE(1), &xfer);
     
-    if (ret < 0) {
+    if (ret != 1) {
         perror("SPI transfer failed");
         // Handle error
     }
@@ -356,6 +356,7 @@ int GPIO::SPIrampVoltage(int spi_fdAux, float desired_voltage, float max_rate, b
         if (spi_val > 255) spi_val = 255;
         
         spiTransferByte(spi_fdAux, (uint8_t)spi_val);
+        cout << "spi_val: 0x" << hex << spi_val << dec << endl;
         
         float voltage = MIN_V + (RATIO * (255 - spi_val));
         currentSPIvalue = voltage;
