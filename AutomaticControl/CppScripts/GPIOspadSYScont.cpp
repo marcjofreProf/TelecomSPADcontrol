@@ -920,8 +920,7 @@ GPIO::~GPIO() { // Destructor
 	this->KillcodePRUs();
 	cout << "Exiting GPIOspadSYScont..." << endl;
 	// Finish with lowering the bias voltage  
-	spiTransferByte(spi_fd, 0xFF); // Set final value
-	cout << "Exit GPIOspadSYScont done!" << endl;
+	spiTransferByte(spi_fd, 0xFF); // Set final value	
 	sleep(2); // Give time to load to the PRU memory and send the values to spi
 	close(spi_fd); // Close SPI file descriptor
 	this->threadRefSynch.join();	
@@ -931,6 +930,7 @@ GPIO::~GPIO() { // Destructor
 	close(tfd);// close the time descriptor
 	//munmap(ddrMem, 0x0FFFFFFF);
 	//close(mem_fd); // Device
+	cout << "Exit GPIOspadSYScont done!" << endl;
 }
 
 } /* namespace exploringBB */
@@ -977,7 +977,7 @@ int main(int argc, char const * argv[]){
  
  //CKPDagent.GenerateSynchClockPRU();// Launch the generation of the clock
  // First initial volage bias up
- GPIOagent.SPIrampVoltage(GPIOagent.spi_fd, 55.0, 2.0, true);
+ GPIOagent.SPIrampVoltage(GPIOagent.spi_fd, 57.0, 2.0, true);
  GPIOagent.SendControlSignals();
  
  while(isValidWhileLoop && !signalReceivedFlag.load()){ 
