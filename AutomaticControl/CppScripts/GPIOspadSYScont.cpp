@@ -202,32 +202,15 @@ GPIO::GPIO(){// Redeclaration of constructor GPIOspadSYScont when no argument is
 	    cout << "Failed to set SPI speed" << endl;
 	}
 
-	// 4. Set SPI loopback mode (for testing)
-	bool loopback_mode = false;  // Set to true for loopback testing
-	if (ioctl(spi_fd, SPI_IOC_WR_LOOP, &loopback_mode) < 0) {
-	    cout << "Failed to set SPI loopback mode" << endl;
-	}
-
-	// 5. Set SPI three-wire mode (half-duplex)
-	bool three_wire_mode = false;  // Set to true for three-wire mode
-	if (ioctl(spi_fd, SPI_IOC_WR_3WIRE_MODE, &three_wire_mode) < 0) {
-	    cout << "Failed to set SPI three-wire mode" << endl;
-	}
-
 	// Optional: Read back settings to verify
 	ioctl(spi_fd, SPI_IOC_RD_MODE, &spi_mode);
 	ioctl(spi_fd, SPI_IOC_RD_BITS_PER_WORD, &bits_per_word);
 	ioctl(spi_fd, SPI_IOC_RD_MAX_SPEED_HZ, &spi_speed);
-	uint8_t read_loopback, read_threewire;
-	ioctl(spi_fd, SPI_IOC_RD_LOOP, &read_loopback);
-	ioctl(spi_fd, SPI_IOC_RD_3WIRE_MODE, &read_threewire);
 
 	std::cout << "SPI Configuration:" << std::endl;
 	std::cout << "  Mode: " << (int)spi_mode << std::endl;
 	std::cout << "  Bits per word: " << (int)bits_per_word << std::endl;
 	std::cout << "  Speed: " << spi_speed << " Hz" << std::endl;
-	std::cout << "  Loopback mode: " << (read_loopback ? "True" : "False") << std::endl;
-	std::cout << "  Three-wire mode: " << (read_threewire ? "True" : "False") << std::endl;
 }
 
 int GPIO::InitAgentProcess(){

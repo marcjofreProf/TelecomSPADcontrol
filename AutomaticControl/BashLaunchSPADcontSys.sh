@@ -164,10 +164,10 @@ sudo nice -n $NicenestPriorValue ./linuxptp/phc2sys -s eth0 -c CLOCK_REALTIME -w
 COMMENT
 
 echo 'Enabling PRU and SPI pins'
-sudo config-pin P9_25 pruin
-sudo config-pin P9_27 pruin
-sudo config-pin P9_41 pruin
-sudo config-pin P9_42 pruin
+sudo config-pin P8_41 pruin
+sudo config-pin P8_42 pruin
+sudo config-pin P8_39 pruin
+sudo config-pin P8_40 pruin
 
 sudo config-pin P8_43 pruout
 sudo config-pin P8_44 pruout
