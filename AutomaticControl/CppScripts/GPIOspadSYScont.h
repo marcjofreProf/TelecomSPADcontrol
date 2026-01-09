@@ -51,9 +51,7 @@ public: //Variables
 		APPLICATION_PAUSED = 1,  // Out of Focus or Paused If In A Timed Situation
 		APPLICATION_EXIT = -1,
 	    };
-	   // SPI communications
-	int spi_fd; // SPI file descriptor
-	float currentSPIvalue=39.0; // In volts // Initial value and follow up values storage
+	
 
 private:// Variables
 	ApplicationState m_state;
@@ -128,6 +126,9 @@ private:// Variables
     const float MIN_V = 39.5;
     const float MAX_V = 88.7;
     const float RATIO = (MAX_V - MIN_V) / 255.0;
+      // SPI communications
+	int spi_fd; // SPI file descriptor
+	float currentSPIvalue=MIN_V; // In volts // Initial value and follow up values storage
 
 public:	// Functions/Methods
 	// PRU
@@ -150,7 +151,7 @@ public:	// Functions/Methods
 	int RelativeNanoSleepWait(unsigned int TimeNanoSecondsSleep);
 	~GPIO();  //destructor
 	// For SPI communications
-	int SPIrampVoltage(int spi_fdAux, float desired_voltage, float max_rate, bool verbose);
+	int SPIrampVoltage(float desired_voltage, float max_rate, bool verbose);
 
 private: // Functions/Methods
 	int KillcodePRUs();
@@ -179,7 +180,7 @@ private: // Functions/Methods
 	int DoubleBubbleSort(double* arr,int MedianFilterFactor);
 	int IntBubbleSort(int* arr,int MedianFilterFactor);
 	// SPI communications
-	uint8_t spiTransferByte(int spi_fdAux, uint8_t tx);
+	uint8_t spiTransferByte(uint8_t tx);
 };
 
 } /* namespace exploringBB */
