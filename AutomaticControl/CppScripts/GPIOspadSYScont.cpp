@@ -375,8 +375,8 @@ float GPIO::SPIrampVoltage(int spi_fdAux, float desired_voltage, float max_rate,
     }
     
     if (verbose) {
+    	cout << "\r\033[K";  // Clear the entire line first
         cout << "\r[========================================] 100% (" << desired_voltage << "V)" << endl;
-        cout << "Ramping complete!" << endl;
     }
     
     // Ensure final value is exact and return it
