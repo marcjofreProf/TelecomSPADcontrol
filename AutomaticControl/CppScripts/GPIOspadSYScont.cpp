@@ -178,7 +178,7 @@ GPIO::GPIO(){// Redeclaration of constructor GPIOspadSYScont when no argument is
 	//this->setMaxRrPriority();// for the main instance. But it stalls operation in RealTime kernel.
 	//////////////////////////////////////////////////////////
 	// Initiate SPI communications
-	const char* spi_device = "/dev/spidev1.0";  // SPI1 bus, CS0
+	const char* spi_device = "/dev/spidev0.1";  // SPI1 bus, CS0
 	// Open SPI device
 	int spi_fd = open(spi_device, O_RDWR);
 	if (spi_fd < 0) {
