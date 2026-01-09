@@ -894,15 +894,15 @@ return 0; // All ok
 }
 
 int GPIO::KillcodePRUs(){
-	if (prussdrv_exec_program(PRU_Signal_NUM, "./CppScripts/BBBhw/PRUkillSignal0.bin") == -1){//if (prussdrv_exec_program(PRU_Signal_NUM, "./CppScripts/BBBhw/PRUassTrigSigScript.bin") == -1){
-		if (prussdrv_exec_program(PRU_Signal_NUM, "./BBBhw/PRUkillSignal0.bin") == -1){//if (prussdrv_exec_program(PRU_Signal_NUM, "./BBBhw/PRUassTrigSigScript.bin") == -1){
-			perror("prussdrv_exec_program non successfull writing of PRUkillSignal0.bin");//perror("prussdrv_exec_program non successfull writing of PRUassTrigSigScript.bin");
+	if (prussdrv_exec_program(PRU_Signal_NUM, "./CppScripts/BBBhw/PRUkillSignal1.bin") == -1){//if (prussdrv_exec_program(PRU_Signal_NUM, "./CppScripts/BBBhw/PRUassTrigSigScript.bin") == -1){
+		if (prussdrv_exec_program(PRU_Signal_NUM, "./BBBhw/PRUkillSignal1.bin") == -1){//if (prussdrv_exec_program(PRU_Signal_NUM, "./BBBhw/PRUassTrigSigScript.bin") == -1){
+			perror("prussdrv_exec_program non successfull writing of PRUkillSignal1.bin");//perror("prussdrv_exec_program non successfull writing of PRUassTrigSigScript.bin");
 		}
 	}
 
-	if (prussdrv_exec_program(PRU_Operation_NUM, "./CppScripts/BBBhw/PRUkillSignal1.bin") == -1){//if (prussdrv_exec_program(PRU_Signal_NUM, "./CppScripts/BBBhw/PRUassTrigSigScript.bin") == -1){
-		if (prussdrv_exec_program(PRU_Operation_NUM, "./BBBhw/PRUkillSignal1.bin") == -1){//if (prussdrv_exec_program(PRU_Signal_NUM, "./BBBhw/PRUassTrigSigScript.bin") == -1){
-			perror("prussdrv_exec_program non successfull writing of PRUkillSignal1.bin");//perror("prussdrv_exec_program non successfull writing of PRUassTrigSigScript.bin");
+	if (prussdrv_exec_program(PRU_Operation_NUM, "./CppScripts/BBBhw/PRUkillSignal0.bin") == -1){//if (prussdrv_exec_program(PRU_Signal_NUM, "./CppScripts/BBBhw/PRUassTrigSigScript.bin") == -1){
+		if (prussdrv_exec_program(PRU_Operation_NUM, "./BBBhw/PRUkillSignal0.bin") == -1){//if (prussdrv_exec_program(PRU_Signal_NUM, "./BBBhw/PRUassTrigSigScript.bin") == -1){
+			perror("prussdrv_exec_program non successfull writing of PRUkillSignal0.bin");//perror("prussdrv_exec_program non successfull writing of PRUassTrigSigScript.bin");
 		}
 	}	
 	sleep(2); // Give time to load to the PRU memory
@@ -918,15 +918,14 @@ int GPIO::DisablePRUs(){
 }
 
 GPIO::~GPIO() { // Destructor
+	this->KillcodePRUs();
 	cout << "Exiting GPIOspadSYScont..." << endl;
 	// Finish with lowering the bias voltage  
 	spiTransferByte(spi_fd, 0xFF); // Set final value
 	cout << "Exit GPIOspadSYScont done!" << endl;
-
 //	this->unexportGPIO();
 	close(spi_fd); // Close SPI file descriptor
-	this->threadRefSynch.join();
-	this->KillcodePRUs();
+	this->threadRefSynch.join();	
 	this->DisablePRUs();
 	//fclose(outfile); 
 	prussdrv_exit();
