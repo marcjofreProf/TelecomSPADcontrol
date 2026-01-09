@@ -163,28 +163,17 @@ sudo nice -n $NicenestPriorValue ./linuxptp/ptp4l -i eth0 -s -H -f PTP4lConfigQL
 sudo nice -n $NicenestPriorValue ./linuxptp/phc2sys -s eth0 -c CLOCK_REALTIME -w -f PTP4lConfigQLANprojectSlave.cfg & # -w -f PTP2pcConfigQLANprojectSlave.cfg & # -m # Important to launch phc2sys first (not in slave)
 COMMENT
 
-: << 'COMMENT'
 echo 'Enabling PRU and SPI pins'
-sudo config-pin P8_15 pruin
-sudo config-pin P8_16 pruin
 sudo config-pin P9_25 pruin
 sudo config-pin P9_27 pruin
 sudo config-pin P9_41 pruin
-sudo config-pin P9_91 pruin
-sudo config-pin P9_92 pruin
-sudo config-pin P8_27 pruout
-sudo config-pin P8_28 pruout
-sudo config-pin P8_29 pruout
-sudo config-pin P8_30 pruout
-sudo config-pin P8_39 pruout
-sudo config-pin P8_40 pruout
-sudo config-pin P8_41 pruout
-sudo config-pin P8_42 pruout
+sudo config-pin P9_42 pruin
+
 sudo config-pin P8_43 pruout
 sudo config-pin P8_44 pruout
 sudo config-pin P8_45 pruout
 sudo config-pin P8_46 pruout
-COMMENT
+
 # For SPI1, /dev/spidev1.#
 #
 # sudo config-pin p9_17 spi_cs
@@ -267,6 +256,7 @@ fi
 echo "$line_to_add" | sudo crontab -
 COMMENT
 
-read -r -p "Press Ctrl+C to kill launched processes"
+read -r -p "Press Ctrl+C to kill launched processes
+"
 # Block operation until Ctrl+C is pressed
 
