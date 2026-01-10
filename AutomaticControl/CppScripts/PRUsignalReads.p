@@ -172,7 +172,7 @@ CHECKDET:
 
 COUNTERS:
 	SUB 	r20, r20, 1 // Substract 1 to the exit counter
-	LDI		r10, 0 // Clear value of r10
+	LDI		r10, 1 // Clear value of r10
 	LSR		r8, r8, 4 // Move relevant bits to the right
 	//AND		r10, r8, 0x00000001 // Move relevant bit to r10
 	ADD		r3, r3, r10 // Increase counter 1 by r10
