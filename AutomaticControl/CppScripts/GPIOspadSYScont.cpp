@@ -844,18 +844,18 @@ int main(int argc, char const * argv[]){
 
         } // switch
 
-            //cout << "Ctrl+x pressed!" << endl;           	
-           	if (read(STDIN_FILENO, &KeyboardC, 1) == 1) {
-	            // Pressed key handling
-	            if (GPIOagent.getState() == GPIO::APPLICATION_PAUSED){
-	            	GPIOagent.m_resume();
-	            	std::cout << "System resumed. Press Ctrl+A to pause..." << std::endl;
-	            }
-	            else{
-	            	GPIOagent.m_pause();
-	            	std::cout << "System paused. Press Ctrl+A to resume..." << std::endl;
-	            }
-	           }
+        //cout << "Ctrl+x pressed!" << endl;           	
+       	if (read(STDIN_FILENO, &KeyboardC, 1) == 1) {
+            // Pressed key handling
+            if (GPIOagent.getState() == GPIO::APPLICATION_PAUSED){
+            	GPIOagent.m_resume();
+            	std::cout << "System resumed. Press any key to pause..." << std::endl;
+            }
+            else{
+            	GPIOagent.m_pause();
+            	std::cout << "System paused. Press any key to resume..." << std::endl;
+            }
+        }
         
 	//if (signalReceivedFlag.load()){GPIOagent.~GPIO();}// Destroy the instance// done somewhere else
     // Time wall
