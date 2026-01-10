@@ -42,6 +42,7 @@ PriorityNoSoHighValue=50 # The larger, the better.
 # deb http://archive.debian.org/debian buster-updates main contrib non-free
 # Comment it: deb http://security.debian.org/debian-security buster/updates main
 
+: << 'COMMENT'
 # Check if watchdog is installed using dpkg
 if dpkg -l | grep -q watchdog; then
     echo "watchdog is installed."
@@ -57,6 +58,7 @@ if dpkg -l | grep -q adjtimex; then
 else
     echo "adjtimex is not installed. sudo apt-get update && sudo apt-get install adjtimex"
 fi
+COMMENT
 
 cleanup_on_SIGINT() {
   echo "** Trapped SIGINT (Ctrl+C)! Cleaning up..."
