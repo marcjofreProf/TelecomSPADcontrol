@@ -791,7 +791,7 @@ int main(int argc, char const * argv[]){
  
  //CKPDagent.GenerateSynchClockPRU();// Launch the generation of the clock
  // First initial volage bias up
- GPIOagent.SPIrampVoltage(GPIOagent.spi_fd, initialDesiredDCvoltage, 2.0, true);
+ // Uncomment GPIOagent.SPIrampVoltage(GPIOagent.spi_fd, initialDesiredDCvoltage, 2.0, true);
  GPIOagent.SendControlSignals();
  
  while(isValidWhileLoop && !signalReceivedFlag.load()){ 

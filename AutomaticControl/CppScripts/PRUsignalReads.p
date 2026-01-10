@@ -184,7 +184,8 @@ FINISH:
 	// Faster Concatenated Checks writting	
 	SET     r30.t11	// enable the data bus. it may be necessary to disable the bus to one peripheral while another is in use to prevent conflicts or manage bandwidth.
 	////////////////////////////////////////	
-	// Indicate number of captures 
+	// Indicate number of captures
+	ADD		r3, r3, 1
 	SBCO 	r3, CONST_PRUSHAREDRAM, 0, 4
 	SBCO 	r4, CONST_PRUSHAREDRAM, 4, 4
 	SBCO 	r5, CONST_PRUSHAREDRAM, 8, 4
