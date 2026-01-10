@@ -777,6 +777,7 @@ int main(int argc, char const * argv[]){
     tcgetattr(STDIN_FILENO, &t);
     t.c_lflag &= ~(ICANON | ECHO);  // Make keys detectable
     tcsetattr(STDIN_FILENO, TCSANOW, &t);
+    fcntl(STDIN_FILENO, F_SETFL, O_NONBLOCK);
  
  float initialDesiredDCvoltage=55.0;
  if ( argc == 1 ) {
