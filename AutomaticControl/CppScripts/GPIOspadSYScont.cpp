@@ -771,11 +771,17 @@ int main(int argc, char const * argv[]){
 	if (!isatty(STDIN_FILENO)) std::cerr << "STDIN is NOT a TTY\n";
     else std::cerr << "STDIN is a TTY\n";
 
-	termios oldt, newt;
+	// Save terminal settings
+    termios oldt, newt;
     tcgetattr(STDIN_FILENO, &oldt);
     newt = oldt;
-    newt.c_lflag &= ~(ICANON | ECHO); // non-canonical, no echo
+    // NON-CANONICAL MODE + NO ECHO
+    newt.c_lflag &= ~(ICANON | ECHO);
+    newt.c_cc[VMIN] = 1;  // read 1 character at a time
+    newt.c_cc[VTIME] = 0;
     tcsetattr(STDIN_FILENO, TCSANOW, &newt);
+
+    char KeyboardC;
  
  float initialDesiredDCvoltage=55.0;
  if ( argc == 1 ) {
@@ -834,9 +840,8 @@ int main(int argc, char const * argv[]){
                // ErrorHandling Throw An Exception Etc.
            }
 
-	            //cout << "Ctrl+x pressed!" << endl;
-           	char c;
-           	if (read(STDIN_FILENO, &c, 1) == 1) {
+	            //cout << "Ctrl+x pressed!" << endl;           	
+           	if (read(STDIN_FILENO, &KeyboardC, 1) == 1) {
 	            // Pressed key handling
 	            if (GPIOagent.getState() == GPIO::APPLICATION_PAUSED){
 	            	GPIOagent.m_resume();

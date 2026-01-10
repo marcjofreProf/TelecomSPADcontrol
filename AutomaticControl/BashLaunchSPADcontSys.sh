@@ -202,8 +202,12 @@ sudo config-pin p9_31 spi_sclk
 # Actual cpp automatic control program
 # Pass arguments
 # Initial DC voltage value (e.g., 55.0) with decimal values
+echo "Application launched with PID: $APP_PID"
+echo "Press:"
+echo "  Ctrl+C to terminate"
+echo "  Press any key to pause/resume"
+
 sudo nice -n $NicenestPriorValue ./CppScripts/GPIOspadSYScont 55.0 < /dev/tty #&
-APP_PID=$!
 
 : << 'COMMENT'
 ## Update process priority values
@@ -243,12 +247,11 @@ if [[ $is_rt_kernel -eq 1 ]]; then
   #pidAux=$(pgrep -f "irq/43-4a100000")
   #sudo chrt -f -p $PriorityValue $pidAux
 fi
-COMMENT
+
 
 pidAux=$(pgrep -f "GPIOspadSYScont")
 sudo chrt -f -p $PriorityNoSoHighValue $pidAux
 
-: << 'COMMENT'
 # Maybe using adjtimex is bad idea because it is an extra layer not controlled by synchronization protocols
 ## Once priorities have been set, hence synch-protocols fine adjusted, adjust kernel clock (also known as system clock) to hardware clock (also known as cmos clock)
 sleep 10 # give time to time protocols to lock
@@ -269,7 +272,7 @@ if [ $? -eq 0 ]; then
 fi
 
 echo "$line_to_add" | sudo crontab -
-COMMENT
+
 
 #read -r -p "Press Ctrl+C to kill launched processes
 #"
@@ -282,4 +285,5 @@ echo "  Ctrl+Z to pause/resume"
 
 # Wait for the process
 wait $APP_PID
+COMMENT
 
