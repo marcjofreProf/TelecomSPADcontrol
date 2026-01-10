@@ -79,7 +79,7 @@ void* exploringBB::GPIO::pru_int = nullptr;// Define and initialize
 unsigned int* exploringBB::GPIO::sharedMem_int = nullptr;// Define and initialize
 unsigned int* exploringBB::GPIO::pru0dataMem_int = nullptr;// Define and initialize
 unsigned int* exploringBB::GPIO::pru1dataMem_int = nullptr;// Define and initialize
-int exploringBB::GPIO::mem_fd = -1;// Define and initialize 
+//int exploringBB::GPIO::mem_fd = -1;// Define and initialize 
 
 GPIO::GPIO(){// Redeclaration of constructor GPIOspadSYScont when no argument is specified
 	// Some variable initialization

@@ -73,7 +73,7 @@ private:// Variables
 		using duration   = std::chrono::nanoseconds;
 		using rep        = duration::rep;
 		using period     = duration::period;
-		using time_point = std::chrono::time_point<my_clock>;
+		using time_point = std::chrono::time_point<my_clockChrono>;
 	    static constexpr bool is_steady = false;// true, false.
 
 	    static time_point now()
@@ -91,7 +91,7 @@ private:// Variables
 
 	using ClockChrono = my_clockChrono;//Clock = std::chrono::system_clock;// Since we use a time sleep, it might make sense a system_clock//tai_clock, system_clock or steady_clock;
 	using TimePointChrono = std::chrono::time_point<ClockChrono>;
-	TimePointChrono TimePointClockCurrentSynchPRU0future=std::chrono::time_point<Clock>();// For synch purposes
+	TimePointChrono TimePointClockCurrentSynchPRU0future=std::chrono::time_point<ClockChrono>();// For synch purposes
 	struct timespec requestTimeWait;
 	// PRU
 	static void *ddrMem, *sharedMem, *pru0dataMem, *pru1dataMem;

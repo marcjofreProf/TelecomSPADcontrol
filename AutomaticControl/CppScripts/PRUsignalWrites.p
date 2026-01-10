@@ -20,9 +20,10 @@
 #define GPIO_CLEARDATAOUToffset 0x190 //We set a GPIO low by writing to this offset. In the 32 bit value we write, if a bit is 1 the 
 // GPIO goes low. If a bit is 0 it is ignored.
 
-#define INS_PER_US		200		// 5ns per instruction for Beaglebone black
+#define INS_PER_US			200		// 5ns per instruction for Beaglebone black
 #define INS_PER_DELAY_LOOP	2		// two instructions per delay loop
 #define NUM_REPETITIONS		1024	//Not used 4294967295	// Maximum value possible storable to limit the number of cycles in 32 bits register. This is wuite limited in number but very controllable (maybe more than one register can be used). This defines the Maximum Transmission Unit - coul dbe named Quantum MTU (defined together with the clock)
+#define PERIOD_CYCLES		16777216		// Power of 2. The longer the better because it will better match any real period
 
 // Refer to this mapping in the file - pruss_intc_mapping.h
 #define PRU0_PRU1_INTERRUPT     17
@@ -32,14 +33,13 @@
 #define ARM_PRU0_INTERRUPT      21
 #define ARM_PRU1_INTERRUPT      22
 
-
 // The constant table registers are common for both PRU (so they share the same values)
 #define CONST_PRUCFG         C4
 #define CONST_PRUDRAM        C24 // allow the PRU to map portions of the system's memory into its own address space. In particular we will map its own data RAM
 #define CONST_IETREG	     C26 //
 
 #define OWN_RAM              0x00000000 // current PRU data RAM
-#define OWN_RAMoffset	     0x00000200 // Offset from Base OWN_RAM to avoid collision with some data tht PRU might store
+#define OWN_RAMoffset	     0x00000200 // Offset from Base OWN_RAM to avoid collision with some data that PRU might store
 #define PRU1_CTRL            0x240
 
 // Beaglebone Black has 32 bit registers (for instance Beaglebone AI has 64 bits and more than 2 PRU)
@@ -60,10 +60,11 @@
 
 // r0 is arbitrary used for operations
 // r1 is reserved with the number NUM_REPETITIONS - storing the PRU 1 DATA number of repetitions
-//// If using the cycle counte rin the PRU (not adjusted to synchronization protocols)
-// We cannot use Constan table pointers since the base addresses are too far
-
+// r2 is reserved with the number of cycles of the period of operation
 // r4 reserved for zeroing registers
+// r5 is reserved for producing the delay of each state
+
+// r10 is arbitrary used for operations
 
 // r14 is reserved for ON state time
 // r15 is reserved for OFF state time
@@ -111,6 +112,7 @@ INITIATIONS:
 	LDI	r30, 0 // All signal pins down
 	LDI	r4, 0 // zeroing
 	MOV	r1, NUM_REPETITIONS// Initial initialization jus tin case// Cannot be done with LDI instruction because it may be a value larger than 65535. load r3 with the number of cycles. For the time being only up to 65535 ->develop so that it can be higher
+	MOV r2, PERIOD_CYCLES
 	LDI	r0, 0 // Ensure reset commands
 	LDI	r14, 20 // ON state
 	LDI	r15, 60 // OFF state
@@ -128,6 +130,16 @@ CMDLOOP2:// Double verification of host sending start command
 	//MOV 	r31.b0, PRU1_ARM_INTERRUPT+16// Here send interrupt to host to measure time
 	// Start executing
 	//CLR     r30.t11	// disable the data bus. it may be necessary to disable the bus to one peripheral while another is in use to prevent conflicts or manage bandwidth.
+ABSSYNCH:	// From this point synchronization is very important. If the previous operations takes longer than the period below to synch, in the cpp script it can be added some extra periods to compensate for frequency relative offset
+	SUB		r10, r2, 1 // Generate the value for r10
+	LBCO	r0, CONST_IETREG, 0xC, 4//LBCO	r0, CONST_IETREG, 0xC, 4//LBBO	r0, r3, 0, 4//LBCO	r0.b0, CONST_IETREG, 0xC, 4. Read the IEP counter
+	AND		r0, r0, r10 //Maybe it can not be done because larger than 255. Implement module of power of 2 on the histogram period// Since the signals have a minimum period of 2 clock cycles and there are 4 combinations (Ch1, Ch2, Ch3, Ch4, NoCh) but with a long periodicity of for example 1024 we can get a value between 0 and 7
+	SUB		r0, r2, r0 // Substract to find how long to wait	
+	LSR		r0, r0, 1// Divide by two because the PSEUDOSYNCHLOOP consumes double
+	ADD		r0, r0, 1// ADD 1 to not have a substraction below zero which halts
+PSEUDOSYNCHLOOP:
+	SUB		r0, r0, 1
+	QBNE	PSEUDOSYNCHLOOP, r0, 0 // Coincides with a 0
 SIGNALON:
 	MOV		r30.b0, 0x0F // Double channels 4. write to magic r30 output byte 0
 	MOV		r5, r14
