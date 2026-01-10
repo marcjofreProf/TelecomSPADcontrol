@@ -93,6 +93,8 @@ sudo pkill -f ptp4l
 sudo pkill -f phc2sys
 sudo pkill -f GPIOspadSYScont
 sleep 1 # wait 1 second to make sure to kill the old processes
+
+: << 'COMMENT'
 ########################################################
 # Set realtime priority with chrt -f and priority 1
 ########################################################
@@ -132,6 +134,7 @@ fi
 
 pidAux=$(pidof -s ptp0)
 sudo renice -n $NicenestPriorValue $pidAux
+COMMENT
 
 sudo /etc/init.d/rsyslog stop # stop logging
 

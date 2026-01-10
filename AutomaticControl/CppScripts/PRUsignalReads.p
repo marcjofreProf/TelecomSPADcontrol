@@ -164,6 +164,8 @@ CHECKDET:
 	QBEQ 	WAIT_FOR_EVENT, r8, 0//QBEQ 	WAIT_FOR_EVENT, r6.w0, 0 //all the b0 above can be converted to w0 to capture more channels, but then in the channel tag recorded has to be increaed and appropiatelly handled in c++ (also the number of tags per run has to be reduced)
 	// If the program reaches this point, at least one of the bits is high
 COUNTERS:
+	ADD		r3, r3, 1 // Dummy test
+	
 	SUB 	r20, r20, 1 // Substract 1 to the exit counter
 	LDI		r10, 0 // Clear value of r10
 	LSR		r8, r8, 4 // Move relevant bits to the right
@@ -185,7 +187,6 @@ FINISH:
 	SET     r30.t11	// enable the data bus. it may be necessary to disable the bus to one peripheral while another is in use to prevent conflicts or manage bandwidth.
 	////////////////////////////////////////	
 	// Indicate number of captures
-	ADD		r3, r3, 1
 	SBCO 	r3, CONST_PRUSHAREDRAM, 0, 4
 	SBCO 	r4, CONST_PRUSHAREDRAM, 4, 4
 	SBCO 	r5, CONST_PRUSHAREDRAM, 8, 4
