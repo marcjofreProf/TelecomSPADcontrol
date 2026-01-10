@@ -792,7 +792,7 @@ int main(int argc, char const * argv[]){
  GPIOagent.m_start(); // Initiate in start state.
  
  /// Errors/actions handling
- signal(SIGSTOP, pauseresume_handler); // manual pause or resume
+ signal(SIGTSTP, pauseresume_handler); // manual pause or resume
  signal(SIGINT, SignalINTHandler);// Interruption signal
  signal(SIGTERM, SignalTERMHandler); // kill, systemd stop
  //signal(SIGPIPE, SignalPIPEHandler);// Error trying to write/read to a socket

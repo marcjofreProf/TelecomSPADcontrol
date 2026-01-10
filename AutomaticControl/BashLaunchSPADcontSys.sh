@@ -275,10 +275,12 @@ COMMENT
 #"
 # Block operation until Ctrl+C is pressed
 
+
 echo "Application launched with PID: $APP_PID"
 echo "Press:"
 echo "  Ctrl+C to terminate"
-echo "  Ctrl+X to pause/resume"
+echo "  Ctrl+Z to pause/resume"
 
 # Wait for the process
 wait $APP_PID
+
