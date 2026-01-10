@@ -213,30 +213,6 @@ bool GPIO::setMaxRrPriority(int PriorityValAux){// For rapidly handling interrup
 	return true;
 }
 ///////////////////////////////
-// Pressed key handling
-/*
-{}
-	switch(s) {
-        case SIGINT:// Ctrl+C
-            std::cout << "Caught SIGINT (Ctrl+C)" << std::endl;
-            m_exit();
-            break;
-        case SIGTSTPRES: // Ctrl+Z // Stop, then if pressed again resume
-            std::cout << "Caught SIGSTP/Resume" << std::endl;
-            if (getState() == APPLICATION_PAUSED){
-            	m_resume();
-            	std::cout << "System resumed. Press Ctrl+A to pause..." << std::endl;
-            }
-            else{
-            	m_pause();
-            	std::cout << "System paused. Press Ctrl+A to resume..." << std::endl;
-            }
-            break;
-        default:
-            std::cout << "Caught other Keyboard signal" << std::endl;
-    }
-}
-*/
 /// Errors handling
 std::atomic<bool> signalReceivedFlag{false};
 static void SignalINTHandler(int s) {
@@ -734,6 +710,15 @@ clock_nanosleep(CLOCK_REALTIME, 0, &ts, NULL); //
 return 0; // All ok
 }
 
+bool GPIO::checkCtrlA() {
+    char key;
+    // Read without waiting (non-blocking)
+    if (read(STDIN_FILENO, &key, 1) > 0) {
+        return (key == 1);  // Ctrl+A = ASCII 1
+    }
+    return false;
+}
+
 int GPIO::KillcodePRUs(){
 	if (prussdrv_exec_program(PRU_Signal_NUM, "./CppScripts/PRUkillSignal1.bin") == -1){
 		if (prussdrv_exec_program(PRU_Signal_NUM, "./PRUkillSignal1.bin") == -1){
@@ -786,6 +771,12 @@ int main(int argc, char const * argv[]){
  
  //printf( "argc:     %d\n", argc );
  //printf( "argv[0]:  %s\n", argv[0] );
+
+ // Keyboard keys detection
+	struct termios t;
+    tcgetattr(STDIN_FILENO, &t);
+    t.c_lflag &= ~(ICANON | ECHO);  // Make keys detectable
+    tcsetattr(STDIN_FILENO, TCSANOW, &t);
  
  float initialDesiredDCvoltage=55.0;
  if ( argc == 1 ) {
@@ -842,6 +833,19 @@ int main(int argc, char const * argv[]){
            default: {
                // ErrorHandling Throw An Exception Etc.
            }
+
+           if (GPIOagent.checkCtrlA()) { // Detection of Ctrl+A thorugh keyboard
+	            //cout << "Ctrl+A pressed!" << endl;
+	            // Pressed key handling
+	            if (GPIOagent.getState() == GPIO::APPLICATION_PAUSED){
+	            	GPIOagent.m_resume();
+	            	std::cout << "System resumed. Press Ctrl+A to pause..." << std::endl;
+	            }
+	            else{
+	            	GPIOagent.m_pause();
+	            	std::cout << "System paused. Press Ctrl+A to resume..." << std::endl;
+	            }
+	        }
 
         } // switch
         
