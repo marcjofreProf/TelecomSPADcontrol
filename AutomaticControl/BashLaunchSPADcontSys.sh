@@ -207,7 +207,7 @@ echo "Press:"
 echo "  Ctrl+C to terminate"
 echo "  Press any key to pause/resume"
 
-sudo nice -n $NicenestPriorValue ./CppScripts/GPIOspadSYScont 55.0 #< /dev/tty #&
+sudo nice -n $NicenestPriorValue ./CppScripts/GPIOspadSYScont 55.0 & #< /dev/tty #&
 
 : << 'COMMENT'
 ## Update process priority values
