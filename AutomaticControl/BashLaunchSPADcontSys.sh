@@ -202,7 +202,7 @@ sudo config-pin p9_31 spi_sclk
 # Actual cpp automatic control program
 # Pass arguments
 # Initial DC voltage value (e.g., 55.0) with decimal values
-sudo nice -n $NicenestPriorValue ./CppScripts/GPIOspadSYScont 55.0 #&
+sudo nice -n $NicenestPriorValue ./CppScripts/GPIOspadSYScont 55.0 < /dev/tty #&
 APP_PID=$!
 
 : << 'COMMENT'
