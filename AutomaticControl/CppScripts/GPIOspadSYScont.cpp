@@ -773,11 +773,11 @@ int main(int argc, char const * argv[]){
  //printf( "argv[0]:  %s\n", argv[0] );
 
  // Keyboard keys detection
-	struct termios t;
-    tcgetattr(STDIN_FILENO, &t);
-    t.c_lflag &= ~(ICANON | ECHO);  // Make keys detectable
-    tcsetattr(STDIN_FILENO, TCSANOW, &t);
-    fcntl(STDIN_FILENO, F_SETFL, O_NONBLOCK);
+if (!isatty(STDIN_FILENO)) {
+        std::cerr << "STDIN is NOT a TTY\n";
+    } else {
+        std::cerr << "STDIN is a TTY\n";
+    }
  
  float initialDesiredDCvoltage=55.0;
  if ( argc == 1 ) {
@@ -867,8 +867,6 @@ int main(int argc, char const * argv[]){
 	//CKPDagent.release();
 	//CKPDagent.RelativeNanoSleepWait((unsigned int)(WaitTimeAfterMainWhileLoop));
     } // while
-  
-  tcsetattr(STDIN_FILENO, TCSANOW, &t); // Restore
 
  return 0; // Everything Ok
 }
