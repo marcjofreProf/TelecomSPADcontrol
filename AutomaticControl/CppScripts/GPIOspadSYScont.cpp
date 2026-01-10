@@ -768,6 +768,9 @@ int main(int argc, char const * argv[]){
  //printf( "argc:     %d\n", argc );
  //printf( "argv[0]:  %s\n", argv[0] );
 
+	if (!isatty(STDIN_FILENO)) std::cerr << "STDIN is NOT a TTY\n";
+    else std::cerr << "STDIN is a TTY\n";
+
 	termios oldt, newt;
     tcgetattr(STDIN_FILENO, &oldt);
     newt = oldt;
