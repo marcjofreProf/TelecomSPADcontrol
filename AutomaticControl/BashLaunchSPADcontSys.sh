@@ -275,6 +275,7 @@ COMMENT
 #"
 # Block operation until Ctrl+C is pressed
 
+stty susp undef # Avoid bash terminal catching Ctrl+Z
 
 echo "Application launched with PID: $APP_PID"
 echo "Press:"
@@ -284,3 +285,4 @@ echo "  Ctrl+Z to pause/resume"
 # Wait for the process
 wait $APP_PID
 
+stty susp ^Z # RE-enable bash terminal catching Ctrl+Z
