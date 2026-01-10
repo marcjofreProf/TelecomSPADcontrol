@@ -26,6 +26,7 @@ Script for PRU real-time handling of multi SPAD system
 #include<unistd.h>
 #include<algorithm> // For std::nth_element
 #include<signal.h>
+#include <termios.h> // Keyboard detection in foreground
 // Watchdog
 #include <sys/ioctl.h>
 #include <linux/watchdog.h>
@@ -212,12 +213,6 @@ bool GPIO::setMaxRrPriority(int PriorityValAux){// For rapidly handling interrup
 	return true;
 }
 ///////////////////////////////
-// Actions handling
-std::atomic<bool> pauseresumeReceivedFlag{false};
-void pauseresume_handler(int s)
-{
-    pauseresumeReceivedFlag.store(true);
-}
 /// Errors handling
 std::atomic<bool> signalReceivedFlag{false};
 static void SignalINTHandler(int s) {
@@ -772,6 +767,12 @@ int main(int argc, char const * argv[]){
  
  //printf( "argc:     %d\n", argc );
  //printf( "argv[0]:  %s\n", argv[0] );
+
+	termios oldt, newt;
+    tcgetattr(STDIN_FILENO, &oldt);
+    newt = oldt;
+    newt.c_lflag &= ~(ICANON | ECHO); // non-canonical, no echo
+    tcsetattr(STDIN_FILENO, TCSANOW, &newt);
  
  float initialDesiredDCvoltage=55.0;
  if ( argc == 1 ) {
@@ -792,7 +793,6 @@ int main(int argc, char const * argv[]){
  GPIOagent.m_start(); // Initiate in start state.
  
  /// Errors/actions handling
- signal(SIGTSTP, pauseresume_handler); // manual pause or resume
  signal(SIGINT, SignalINTHandler);// Interruption signal
  signal(SIGTERM, SignalTERMHandler); // kill, systemd stop
  //signal(SIGPIPE, SignalPIPEHandler);// Error trying to write/read to a socket
@@ -831,8 +831,9 @@ int main(int argc, char const * argv[]){
                // ErrorHandling Throw An Exception Etc.
            }
 
-           if (pauseresumeReceivedFlag.load()) { // Detection of Ctrl+A thorugh keyboard
 	            //cout << "Ctrl+x pressed!" << endl;
+           	char c;
+           	if (read(STDIN_FILENO, &c, 1) == 1) {
 	            // Pressed key handling
 	            if (GPIOagent.getState() == GPIO::APPLICATION_PAUSED){
 	            	GPIOagent.m_resume();
@@ -842,7 +843,7 @@ int main(int argc, char const * argv[]){
 	            	GPIOagent.m_pause();
 	            	std::cout << "System paused. Press Ctrl+A to resume..." << std::endl;
 	            }
-	        }
+	           }
 
         } // switch
         
@@ -863,6 +864,8 @@ int main(int argc, char const * argv[]){
 	//CKPDagent.release();
 	//CKPDagent.RelativeNanoSleepWait((unsigned int)(WaitTimeAfterMainWhileLoop));
     } // while
+
+    tcsetattr(STDIN_FILENO, TCSANOW, &oldt); // restore
 
  return 0; // Everything Ok
 }

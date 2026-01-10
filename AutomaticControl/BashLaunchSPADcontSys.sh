@@ -202,7 +202,7 @@ sudo config-pin p9_31 spi_sclk
 # Actual cpp automatic control program
 # Pass arguments
 # Initial DC voltage value (e.g., 55.0) with decimal values
-sudo nice -n $NicenestPriorValue ./CppScripts/GPIOspadSYScont 55.0 &
+sudo nice -n $NicenestPriorValue ./CppScripts/GPIOspadSYScont 55.0 #&
 APP_PID=$!
 
 : << 'COMMENT'
@@ -275,8 +275,6 @@ COMMENT
 #"
 # Block operation until Ctrl+C is pressed
 
-stty susp undef # Avoid bash terminal catching Ctrl+Z
-
 echo "Application launched with PID: $APP_PID"
 echo "Press:"
 echo "  Ctrl+C to terminate"
@@ -285,4 +283,3 @@ echo "  Ctrl+Z to pause/resume"
 # Wait for the process
 wait $APP_PID
 
-stty susp ^Z # RE-enable bash terminal catching Ctrl+Z
