@@ -159,7 +159,7 @@ WAIT_FOR_EVENT: // At least dark counts will be detected so detections will happ
 	LBBO	r9, r13, 0+2, 1 // Read the relevant byte value of DWT_CYCNT.
 	QBLE    FINISH, r9, 128 //Timer done. Equivalent to 40 ms
 	// Then measure what should be 1 (for edge detection)	
-	MOV		r8.w0, r31.w0 // Consecutive red for edge detection
+	MOV		r8, r31 // Consecutive red for edge detection
 	AND		r8, r8, r1 // Mask to make sure there are no other info
 
 	MOV		r8, r31 // Dummy
