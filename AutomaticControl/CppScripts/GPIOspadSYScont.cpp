@@ -710,11 +710,11 @@ clock_nanosleep(CLOCK_REALTIME, 0, &ts, NULL); //
 return 0; // All ok
 }
 
-bool GPIO::checkCtrlA() {
+bool GPIO::checkCtrlX() {
     char key;
     // Read without waiting (non-blocking)
     if (read(STDIN_FILENO, &key, 1) > 0) {
-        return (key == 1);  // Ctrl+A = ASCII 1
+        return (key == 24);  // Ctrl+X = ASCII 24
     }
     return false;
 }
@@ -834,8 +834,8 @@ int main(int argc, char const * argv[]){
                // ErrorHandling Throw An Exception Etc.
            }
 
-           if (GPIOagent.checkCtrlA()) { // Detection of Ctrl+A thorugh keyboard
-	            //cout << "Ctrl+A pressed!" << endl;
+           if (GPIOagent.checkCtrlX()) { // Detection of Ctrl+A thorugh keyboard
+	            //cout << "Ctrl+x pressed!" << endl;
 	            // Pressed key handling
 	            if (GPIOagent.getState() == GPIO::APPLICATION_PAUSED){
 	            	GPIOagent.m_resume();
@@ -867,5 +867,7 @@ int main(int argc, char const * argv[]){
 	//CKPDagent.RelativeNanoSleepWait((unsigned int)(WaitTimeAfterMainWhileLoop));
     } // while
   
+  tcsetattr(STDIN_FILENO, TCSANOW, &t); // Restore
+
  return 0; // Everything Ok
 }

@@ -278,18 +278,7 @@ COMMENT
 echo "Application launched with PID: $APP_PID"
 echo "Press:"
 echo "  Ctrl+C to terminate"
-echo "  Ctrl+A to pause/resume"
-
-# Save current settings
-SAVED_STTY=$(stty -g)
-
-# Disable terminal's Ctrl+A handling
-stty intr ^c susp ^z kill ^u
-stty -ixon -ixoff
-stty -echoctl
+echo "  Ctrl+X to pause/resume"
 
 # Wait for the process
 wait $APP_PID
-
-# Restore settings
-stty $SAVED_STTY
