@@ -26,7 +26,6 @@ Script for PRU real-time handling of multi SPAD system
 #include<unistd.h>
 #include<algorithm> // For std::nth_element
 #include<signal.h>
-#include <termios.h> // For termios detection of keyboard keys
 // Watchdog
 #include <sys/ioctl.h>
 #include <linux/watchdog.h>
@@ -213,11 +212,22 @@ bool GPIO::setMaxRrPriority(int PriorityValAux){// For rapidly handling interrup
 	return true;
 }
 ///////////////////////////////
+// Actions handling
+std::atomic<bool> pauseresumeReceivedFlag{false};
+void pauseresume_handler(int s)
+{
+    pauseresumeReceivedFlag.store(true);
+}
 /// Errors handling
 std::atomic<bool> signalReceivedFlag{false};
 static void SignalINTHandler(int s) {
 signalReceivedFlag.store(true);
-cout << "Caught SIGPIPE" << endl;
+cout << "Caught SIGINT" << endl;
+}
+
+static void SignalTERMHandler(int s) {
+signalReceivedFlag.store(true);
+cout << "Caught SIGTERM" << endl;
 }
 
 static void SignalPIPEHandler(int s) {
@@ -710,15 +720,6 @@ clock_nanosleep(CLOCK_REALTIME, 0, &ts, NULL); //
 return 0; // All ok
 }
 
-bool GPIO::checkCtrlX() {
-    char key;
-    // Read without waiting (non-blocking)
-    if (read(STDIN_FILENO, &key, 1) > 0) {
-        return (key == ' ');  // Ctrl+X = ASCII 24
-    }
-    return false;
-}
-
 int GPIO::KillcodePRUs(){
 	if (prussdrv_exec_program(PRU_Signal_NUM, "./CppScripts/PRUkillSignal1.bin") == -1){
 		if (prussdrv_exec_program(PRU_Signal_NUM, "./PRUkillSignal1.bin") == -1){
@@ -771,13 +772,6 @@ int main(int argc, char const * argv[]){
  
  //printf( "argc:     %d\n", argc );
  //printf( "argv[0]:  %s\n", argv[0] );
-
- // Keyboard keys detection
-if (!isatty(STDIN_FILENO)) {
-        std::cerr << "STDIN is NOT a TTY\n";
-    } else {
-        std::cerr << "STDIN is a TTY\n";
-    }
  
  float initialDesiredDCvoltage=55.0;
  if ( argc == 1 ) {
@@ -797,9 +791,11 @@ if (!isatty(STDIN_FILENO)) {
  
  GPIOagent.m_start(); // Initiate in start state.
  
- /// Errors handling
+ /// Errors/actions handling
+ signal(SIGUSR1, pauseresume_handler); // manual pause or resume
  signal(SIGINT, SignalINTHandler);// Interruption signal
- signal(SIGPIPE, SignalPIPEHandler);// Error trying to write/read to a socket
+ signal(SIGTERM, SignalTERMHandler); // kill, systemd stop
+ //signal(SIGPIPE, SignalPIPEHandler);// Error trying to write/read to a socket
  //signal(SIGSEGV, SignalSegmentationFaultHandler);// Segmentation fault
  
  bool isValidWhileLoop=true;
@@ -835,7 +831,7 @@ if (!isatty(STDIN_FILENO)) {
                // ErrorHandling Throw An Exception Etc.
            }
 
-           if (GPIOagent.checkCtrlX()) { // Detection of Ctrl+A thorugh keyboard
+           if (pauseresumeReceivedFlag.load()) { // Detection of Ctrl+A thorugh keyboard
 	            //cout << "Ctrl+x pressed!" << endl;
 	            // Pressed key handling
 	            if (GPIOagent.getState() == GPIO::APPLICATION_PAUSED){
