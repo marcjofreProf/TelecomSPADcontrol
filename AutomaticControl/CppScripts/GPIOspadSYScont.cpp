@@ -109,21 +109,14 @@ GPIO::GPIO(){// Redeclaration of constructor GPIOspadSYScont when no argument is
     // Initialize DDM
 	LOCAL_DDMinit(); // DDR (Double Data Rate): A class of memory technology used in DRAM where data is transferred on both the rising and falling edges of the clock signal, effectively doubling the data rate without increasing the clock frequency.
 	// Here we can update memory space assigned address
-	valpHolder=(unsigned short*)&sharedMem_int[OFFSET_SHAREDRAM+1];
-	//valpAuxHolder=valpHolder+4+6*NumQuBitsPerRun;// 6* since each detection also includes the channels (2 Bytes) and 4 bytes for 32 bits counter, and plus 4 since the first tag is captured at the very beggining
-	CalpHolder=(unsigned int*)&sharedMem_int[OFFSET_SHAREDRAM];//(unsigned int*)&pru0dataMem_int[2];// First tagg captured at the very beggining
+	CalpHolder=(unsigned int*)&sharedMem_int[OFFSET_SHAREDRAM];
 	
 	// Launch the PRU0 (timetagging) and PR1 (generating signals) codes but put them in idle mode, waiting for command
 	// Timetagging
 	// Execute program
-	// Load and execute the PRU program on the PRU0
-	/*
+	// Load and execute the PRU program on the PRU0	
 	pru0dataMem_int[0]=static_cast<unsigned int>(0); // set no command
-	pru0dataMem_int[1]=static_cast<unsigned int>(this->NumQuBitsPerRun); // set number captures, with overflow clock
-	pru0dataMem_int[2]=static_cast<unsigned int>(this->GuardPeriod);// Indicate period of the sequence signal, so that it falls correctly and is picked up by the Signal PRU. Link between system clock and PRU clock. It has to be a power of 2
-	pru0dataMem_int[3]=static_cast<unsigned int>(1);
-	pru0dataMem_int[4]=static_cast<unsigned int>(this->TTGcoincWin); // set coincidence window length
-	*/
+	
 	if (prussdrv_exec_program(PRU_Operation_NUM, "./CppScripts/PRUsignalReads.bin") == -1){
 		if (prussdrv_exec_program(PRU_Operation_NUM, "./PRUsignalReads.bin") == -1){
 			perror("prussdrv_exec_program non successfull writing of PRUsignalReads.bin");
@@ -131,52 +124,19 @@ GPIO::GPIO(){// Redeclaration of constructor GPIOspadSYScont when no argument is
 	}
 	////prussdrv_pru_enable(PRU_Operation_NUM);
 	
-	// Generate signals
-	/*
+	// Generate signals	
 	pru1dataMem_int[0]=static_cast<unsigned int>(0); // set no command
-	pru1dataMem_int[1]=static_cast<unsigned int>(this->NumberRepetitionsSignal); // set the number of repetitions
-	pru1dataMem_int[2]=static_cast<unsigned int>(1);// Referenced to the synch trig period
-	pru1dataMem_int[3]=static_cast<unsigned int>(this->GuardPeriod);// Indicate period of the sequence signal, so that it falls correctly and is picked up by the Signal PRU. Link between system clock and PRU clock. It has to be a power of 2
-	pru1dataMem_int[4]=static_cast<unsigned int>(this->ContCorr);
-	pru1dataMem_int[5]=static_cast<unsigned int>(this->SigONPeriod);
-	pru1dataMem_int[6]=static_cast<unsigned int>(this->ContCorrSign);
-	pru1dataMem_int[7]=static_cast<unsigned int>(this->SigOFFPeriod);// Off time
-	*/
 	// Load and execute the PRU program on the PRU1
 	if (prussdrv_exec_program(PRU_Signal_NUM, "./CppScripts/PRUsignalWrites.bin") == -1){
 		if (prussdrv_exec_program(PRU_Signal_NUM, "./PRUsignalWrites.bin") == -1){
 			perror("prussdrv_exec_program non successfull writing of PRUsignalWrites.bin");
 		}
 	}
-	/*
-	// Self Test Histogram - comment the PRU1 launching above "generate signals"
-	if (prussdrv_exec_program(PRU_Signal_NUM, "./CppScripts/BBBhw/PRUassTrigSigScriptHist4SigSelfTest.bin") == -1){//if (prussdrv_exec_program(PRU_Signal_NUM, "./CppScripts/BBBhw/PRUassTrigSigScript.bin") == -1){
-		if (prussdrv_exec_program(PRU_Signal_NUM, "./BBBhw/PRUassTrigSigScriptHist4SigSelfTest.bin") == -1){//if (prussdrv_exec_program(PRU_Signal_NUM, "./BBBhw/PRUassTrigSigScript.bin") == -1){
-			perror("prussdrv_exec_program non successfull writing of PRUassTrigSigScriptHist4SigSelfTest.bin");//perror("prussdrv_exec_program non successfull writing of PRUassTrigSigScript.bin");
-		}
-	}
-	sleep(10);// Give some time to load programs in PRUs and initiate. Very important, otherwise bad values might be retrieved
-	this->SendTriggerSignalsSelfTest(); // Self test initialization
-	cout << "Attention doing SendTriggerSignalsSelfTest. To be removed" << endl;	
-	*/
 
 	////prussdrv_pru_enable(PRU_Signal_NUM);
 	sleep(1); // Give some time to load programs in PRUs and the synch protocols to initiate and lock after prioritazion and adjtimex. Very important, otherwise bad values might be retrieved
 	
-	  /*// Doing debbuging checks - Debugging 1	  
-	  std::thread threadReadTimeStampsAux=std::thread(&GPIO::ReadTimeStamps,this);
-	  std::thread threadSendTriggerSignalsAux=std::thread(&GPIO::SendTriggerSignals,this);
-	  threadReadTimeStampsAux.join();	
-	  threadSendTriggerSignalsAux.join();
-	  //this->DDRdumpdata(); // Store to file
-	  
-	  //munmap(ddrMem, 0x0FFFFFFF); // remove any mappings for those entire pages containing any part of the address space of the process starting at addr and continuing for len bytes. 
-	  //close(mem_fd); // Device
-	  streamDDRpru.close();
-	  prussdrv_pru_disable(PRU_Signal_NUM);
-	  prussdrv_pru_disable(PRU_Operation_NUM);  
-	  prussdrv_exit();*/
-	  ///////////////////////////////////////////////////////
+	///////////////////////////////////////////////////////
 	//this->setMaxRrPriority();// for the main instance. But it stalls operation in RealTime kernel.
 	//////////////////////////////////////////////////////////
 	// Initiate SPI communications
@@ -408,12 +368,12 @@ int GPIO::NonBusyTimeWall(){
 
 int GPIO::HandleInterruptPRUs(){ // Uses output pins to clock subsystems physically generating qubits or entangled qubits
 
-//ReadTimeCounts();
+ReadTimeCounts(); // Read the counters of detections
 // TODO: Do calculations with the counts retrieved
 // Prepare adjustments and communicate to the signal PRU thorugh internal interrupts
 //SendControlSignals(); // Already launched at the beggining
 // Apply DC bias adjustments
-//SPIrampVoltage(int spi_fd, desired_voltage_current, 2.0, false);
+//SPIrampVoltage(spi_fd, desired_voltage_current, 2.0, true); // Verbose should be turn to false one debugging is complete
 
 return 0;// All ok
 }
@@ -436,7 +396,7 @@ int GPIO::ReadTimeCounts(){// Read the SPADs associated counters
 		cout << "PRU0 interrupt poll error" << endl;
 	}
 
-	this->DDRdumpdata(); // Pre-process tags. Needs to access memory of PRU, so better within the controlled acquired environment
+	this->DDRdumpdata(); // Pre-process counter. Needs to access memory of PRU, so better within the controlled acquired environment
 
 	return 0;// all ok
 }
@@ -467,120 +427,23 @@ return 0;// all ok
 }
 
 int GPIO::DDRdumpdata(){
-/*//cout << "GPIO::Reading timetags" << endl;
-// Reading data from PRU shared and own RAMs
-//DDR_regaddr = (short unsigned int*)ddrMem + OFFSET_DDR;
-valp=valpHolder; // Coincides with SHARED in PRUassTaggDetSimpleScript.p
-//valpAux=valpAuxHolder;
-//synchp=synchpHolder;
-//for each capture bursts, at the beggining is stored the overflow counter of 32 bits. From there, each capture consists of 32 bits of the DWT_CYCCNT register and 8 bits of the channels detected (40 bits per detection tag).
-// The shared memory space has 12KB=12×1024bytes=12×1024×8bits=98304bits.
-//Doing numbers, we can store up to 1966 captures. To be in the safe side, we can do 1964 captures
+valp=CalpHolder; // Coincides with SHARED in PRUsignalReads.p
 
-// When unsgined char
-//valThresholdResetCounts=static_cast<unsigned int>(*valpAux);
-//valpAux++;// 1 times 8 bits
-//valThresholdResetCounts=valThresholdResetCounts | (static_cast<unsigned int>(*valpAux))<<8;
-//valpAux++;// 1 times 8 bits
-//valThresholdResetCounts=valThresholdResetCounts | (static_cast<unsigned int>(*valpAux))<<16;
-//valpAux++;// 1 times 8 bits
-//valThresholdResetCounts=valThresholdResetCounts | (static_cast<unsigned int>(*valpAux))<<24;
-//valpAux++;// 1 times 8 bits
-// When unsigned short - Not used
-//valThresholdResetCounts=static_cast<unsigned int>(*valpAux);
-//valpAux++;// 1 times 16 bits
-//valThresholdResetCounts=valThresholdResetCounts | (static_cast<unsigned int>(*valpAux))<<16;
-//valpAux++;// 1 times 16 bits
-//cout << "valThresholdResetCounts: " << valThresholdResetCounts << endl;
-//////////////////////////////////////////////////////////////////////////////
+// When unsigned int
+DetCounterCh[0]=static_cast<unsigned int>(*valp);
+valp++;
+DetCounterCh[1]=static_cast<unsigned int>(*valp);
+valp++;
+DetCounterCh[2]=static_cast<unsigned int>(*valp);
+valp++;
+DetCounterCh[3]=static_cast<unsigned int>(*valp);
 
-// Reading first calibration tag and link it to the system clock
-OldLastTimeTagg=static_cast<unsigned long long int>(*CalpHolder);//extendedCounterPRUaux + static_cast<unsigned long long int>(*CalpHolder);
-//cout << "GPIO::OldLastTimeTagg: " << OldLastTimeTagg << endl;
+// Debugging
+cout << "DDRdumpdata DetCounterCh[0]: " << DetCounterCh[0] << endl;
+cout << "DDRdumpdata DetCounterCh[1]: " << DetCounterCh[1] << endl;
+cout << "DDRdumpdata DetCounterCh[2]: " << DetCounterCh[2] << endl;
+cout << "DDRdumpdata DetCounterCh[3]: " << DetCounterCh[3] << endl;
 
-// Slot the TimeTaggsLast, since it eventually has to start at the beggining of the effective period
-this->TimeTaggsLast=(static_cast<unsigned long long int>(ldTimePointClockTagPRUinitial)/static_cast<unsigned long long int>(GuardPeriod)+2)*static_cast<unsigned long long int>(GuardPeriod);//(static_cast<unsigned long long int>(ldTimePointClockTagPRUinitial)/static_cast<unsigned long long int>(MultFactorEffSynchPeriod*SynchTrigPeriod))*static_cast<unsigned long long int>(MultFactorEffSynchPeriod*SynchTrigPeriod);
-
-//Furthermore, remove some time from epoch - in multiples of the SynchTrigPeriod, so it is easier to handle in the above agents
-//cout << "GPIO::DDRdumpdata TimeTaggsLast before removing Epoch: " << TimeTaggsLast << endl;
-if (this->TimeTaggsLast<((this->ULLIEpochReOffset/static_cast<unsigned long long int>(GuardPeriod))*static_cast<unsigned long long int>(GuardPeriod))){
-	cout << "GPIO::DDRdumpdata ULLIEpochReOffset is too large...not removing actual time since epoch!!!! check: " << endl;
-}
-else{
-	this->TimeTaggsLast=static_cast<unsigned long long int>(static_cast<long long int>(this->TimeTaggsLast)-static_cast<long long int>((this->ULLIEpochReOffset/static_cast<unsigned long long int>(GuardPeriod))*static_cast<unsigned long long int>(GuardPeriod)));//static_cast<unsigned long long int>(static_cast<long long int>(this->TimeTaggsLast)-static_cast<long long int>((this->ULLIEpochReOffset/static_cast<unsigned long long int>(MultFactorEffSynchPeriod*SynchTrigPeriod))*static_cast<unsigned long long int>(MultFactorEffSynchPeriod*SynchTrigPeriod)));
-}
-//cout << "GPIO::DDRdumpdata TimeTaggsLast after removing Epoch: " << TimeTaggsLast << endl;
-if (iIterRunsAux==0){TimeTaggsLastStored=TimeTaggsLast;TotalCurrentNumRecords=0;}// First iteration of current runs, store the value for synchronization time difference calibration
-
-long long int LLIOldLastTimeTagg=static_cast<long long int>(OldLastTimeTagg);
-// It is important to adjust the OldLastTimeTagg so that absolute timetagg references match among nodes
-LLIOldLastTimeTagg=LLIOldLastTimeTagg%(static_cast<unsigned long long int>(MultFactorEffSynchPeriod*SynchTrigPeriod));
-
-unsigned int valCycleCountPRUAux1;
-unsigned int valCycleCountPRUAux2;
-//cout << "GPIO::NumQuBitsPerRun " << NumQuBitsPerRun << endl;
-//cout << "GPIO::MaxNumQuBitsMemStored " << MaxNumQuBitsMemStored << endl;
-//for (iIterDump=0; iIterDump<NumQuBitsPerRun; iIterDump++){
-CurrentiIterDump=0;
-int CurrentiIterDumpAux=0;
-bool ValidTag=false;
-
-extendedCounterPRUholder=1;// Re-initialize at each run. 1 so that at least the first is checked and stored
-extendedCounterPRUholderOld=0;// Re-initialize at each run
-int TotalCurrentNumRecordsOld=TotalCurrentNumRecords;
-int PendingNumQuBitsPerRun=static_cast<int>(sharedMem_int[OFFSET_SHAREDRAM+LAST_SHAREDRAMPOS]);
-//cout << "GPIO::DDRdumpdata NumQuBitsPerRun-PendingNumQuBitsPerRun: " << (NumQuBitsPerRun-PendingNumQuBitsPerRun) << endl;
-while (CurrentiIterDumpAux<NumQuBitsPerRun and extendedCounterPRUholder>extendedCounterPRUholderOld and (NumQuBitsPerRun-PendingNumQuBitsPerRun)>CurrentiIterDump){// Do it until a timetagg is smaller in value than the previous one, because it means that it could not achieve to capture NumQuBitsPerRun
-	extendedCounterPRUholderOld=extendedCounterPRUholder;
-	// When unsigned short
-	//valCycleCountPRU=static_cast<unsigned int>(0);// Reset value
-	valCycleCountPRUAux1=static_cast<unsigned int>(*valp) & 0x0000FFFF;
-	//cout << "GPIO::DDRdumpdata::static_cast<unsigned int>(*valp): " << static_cast<unsigned int>(*valp) << endl;
-	//cout << "GPIO::DDRdumpdata::valCycleCountPRUAux1: " << valCycleCountPRUAux1 << endl;
-	valp++;// 1 times 16 bits
-	valCycleCountPRUAux2=((static_cast<unsigned int>(*valp))<<16) & 0xFFFF0000;
-	//cout << "GPIO::DDRdumpdata::static_cast<unsigned int>(*valp): " << static_cast<unsigned int>(*valp) << endl;
-	//cout << "GPIO::DDRdumpdata::valCycleCountPRUAux2: " << valCycleCountPRUAux2 << endl;
-	valCycleCountPRU=valCycleCountPRUAux1 | valCycleCountPRUAux2;
-	valp++;// 1 times 16 bits
-	//if (iIterDump==0 or iIterDump== 512 or iIterDump==1023){cout << "valCycleCountPRU: " << valCycleCountPRU << endl;}
-	// Mount the extended counter value
-	extendedCounterPRUholder=static_cast<unsigned long long int>(valCycleCountPRU);//extendedCounterPRUaux + static_cast<unsigned long long int>(valCycleCountPRU);
-	//if (iIterDump==0 or iIterDump== 512 or iIterDump==1023){cout << "extendedCounterPRU: " << extendedCounterPRU << endl;}
-	// Apply system clock corrections
-	//TimeTaggsStored[TotalCurrentNumRecords]=static_cast<unsigned long long int>(static_cast<long double>(static_cast<long long int>(extendedCounterPRUholder)-LLIOldLastTimeTagg)*AdjPulseSynchCoeffAverage)+TimeTaggsLast;	// The fist OldLastTimeTagg and TimeTaggsLast of the iteration is compensated for with the calibration tag together with the accumulated synchronization error	    
-	TimeTaggsStored[TotalCurrentNumRecords]=static_cast<unsigned long long int>(static_cast<long long int>(extendedCounterPRUholder)-LLIOldLastTimeTagg)+TimeTaggsLast;	// The fist OldLastTimeTagg and TimeTaggsLast of the iteration is compensated for with the calibration tag together with the accumulated synchronization error	    
-	//////////////////////////////////////////////////////////////		
-	// When unsigned short
-	valp++;// 1 times 16 bits
-	// Check that it belong to a channel of interest
-	//cout << "GPIO::ChannelTagsStored[TotalCurrentNumRecords]: " << ChannelTagsStored[TotalCurrentNumRecords] << endl;
-	//cout << "GPIO::ValidTagMask: " << ValidTagMask << endl;
-	if ((ChannelTagsStored[TotalCurrentNumRecords]&ValidTagMask)>0){ValidTag=true;}
-	else{ValidTag=false;}
-	//cout << "GPIO::ValidTag: " << ValidTag << endl;
-	//cout << "GPIO::TotalCurrentNumRecords: " << TotalCurrentNumRecords << endl;
-	//cout << "GPIO::extendedCounterPRUholder: " << extendedCounterPRUholder << endl;
-	//cout << "GPIO::extendedCounterPRUholder>0: " << (extendedCounterPRUholder>0) << endl;
-	if (TotalCurrentNumRecords<MaxNumQuBitsMemStored and extendedCounterPRUholder>0 and ValidTag==true){TotalCurrentNumRecords++;CurrentiIterDump++;}//Variable to hold the number of currently stored records in memory	
-	CurrentiIterDumpAux++; //Safety variable
-}
-if (TotalCurrentNumRecords>MaxNumQuBitsMemStored){cout << "GPIO::We have reached the maximum number of qubits storage!" << endl;}
-else if (TotalCurrentNumRecords==TotalCurrentNumRecordsOld){cout << "GPIO::No detection of qubits!" << endl;}
-//cout << "GPIO::TotalCurrentNumRecords: " << TotalCurrentNumRecords << endl;
-//cout << "GPIO::Clearing PRU timetags" << endl;
-//// Reset values of the sharedMem_int after each iteration
-//for (iIterDump=0; iIterDump<((NumQuBitsPerRun/2)*3); iIterDump++){
-//	sharedMem_int[OFFSET_SHAREDRAM+iIterDump]=static_cast<unsigned int>(0x00000000); // Put it all to zeros
-//}
-// Actually only needed to zero the first memory position
-sharedMem_int[OFFSET_SHAREDRAM+1]=static_cast<unsigned int>(0x00000000); // Put it all to zeros
-
-// Freeeing the semaphore block after all the access to the PRU shared memory
-this->ManualSemaphore=false;
-this->ManualSemaphoreExtra=false;
-this->release();
-*/
 return 0; // all ok
 }
 

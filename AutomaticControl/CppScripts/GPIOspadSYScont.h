@@ -61,12 +61,8 @@ private:// Variables
 	int PriorityValTop=70; // Top priority for critical operations
 	// Semaphore
 	unsigned long long int UnTrapSemaphoreValueMaxCounter=1000;//MAx counter trying to acquire semaphore, then force release
-	int whileProtAuxMax=10000; // Value of protecton against blocking indefenitely, which produces the node to go down (broken pipe and re-start)
-	int whileProtAux=whileProtAuxMax; // Protection againts blocking indefinetely
 	std::atomic<bool> valueSemaphore{true};// Start as 1 (open or acquireable)
-	std::atomic<bool> ManualSemaphore{false};
-	std::atomic<bool> ManualSemaphoreExtra{false};
-	std::thread threadRefSynch; // Process thread that executes requests/petitions without blocking
+	//std::thread threadRefSynch; // Process thread that executes requests/petitions without blocking
 	// Time/synchronization management
 	struct my_clockChrono
 	{
@@ -99,29 +95,18 @@ private:// Variables
 	//static int chunk;
 	static unsigned int *sharedMem_int,*pru0dataMem_int,*pru1dataMem_int;
 	
-	// SHARED RAM to file dump
-	int iIterDump;
-	int CurrentiIterDump;
-	unsigned int NumSynchPulses=0;
-	unsigned short* valpHolder;
-	//unsigned short* valpAuxHolder;
+	// SHARED RAM to file dump	
 	unsigned int* CalpHolder; // 32 bits
-	unsigned short* valp; // 16 bits
-	//unsigned short* valpAux; // 16 bits
-	unsigned int valCycleCountPRU=0; // 32 bits // Made relative to each acquisition run
-	//unsigned int valIEPtimerFinalCounts; // 32 bits
-	unsigned long long int extendedCounterPRU=0; // 64 bits
-	unsigned long long int extendedCounterPRUholder=0; // 64 bits.
-	unsigned long long int extendedCounterPRUholderOld=0; // 64 bits
-	unsigned long long int extendedCounterPRUaux=0; // 64 bits
+	unsigned int* valp; // 32 bits
 
 	// SPI communication
 	// Voltage to SPI conversion constants
     const float MIN_V = 39.5;
     const float MAX_V = 88.7;
     const float RATIO = (MAX_V - MIN_V) / 255.0;
-    // SPI communications
 	float currentSPIvalue=MIN_V; // In volts // Initial value and follow up values storage
+	// Detection counters
+	unsigned int DetCounterCh[4]; // Holder of the detections per channel
 
 public:	// Functions/Methods
 	// PRU
