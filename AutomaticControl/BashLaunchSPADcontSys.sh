@@ -208,6 +208,7 @@ echo "  Ctrl+C to terminate"
 echo "  Press any key to pause/resume"
 
 sudo nice -n $NicenestPriorValue ./CppScripts/GPIOspadSYScont 55.0 & #< /dev/tty #&
+APP_PID=$!
 
 : << 'COMMENT'
 ## Update process priority values
@@ -272,7 +273,7 @@ if [ $? -eq 0 ]; then
 fi
 
 echo "$line_to_add" | sudo crontab -
-
+COMMENT
 
 #read -r -p "Press Ctrl+C to kill launched processes
 #"
@@ -281,9 +282,9 @@ echo "$line_to_add" | sudo crontab -
 echo "Application launched with PID: $APP_PID"
 echo "Press:"
 echo "  Ctrl+C to terminate"
-echo "  Ctrl+Z to pause/resume"
+echo "  Any key to pause/resume"
 
 # Wait for the process
 wait $APP_PID
-COMMENT
+
 
