@@ -39,7 +39,7 @@
    // Beware: Many other PRU EGP pins are reserved by HDMI or onboard flash, which  
    // would need to be disabled first by editing uEnv.txt and rebooting.  
    
-   exclusive-use = "P8.41", "P8.42", "P8.39", "P8.40", "P8.45", "P8.46", "P8.43", "P8.44", "pru0", "pru1";  
+   exclusive-use = "P9.27", "P9.25", "P8.16", "P8.15", "P8.45", "P8.46", "P8.43", "P8.44", "pru0", "pru1";  
   
 //fragment@0{
 //  target = <&ocp>; 
@@ -66,10 +66,10 @@
        //		Bit 6 is 1 if you want slow rise/fall times (for long i2c buses)
         
        pinctrl-single,pins = <          
-         0x0B4 0x26      // Mode 6 input pull-down
-         0x0BC 0x26      // Mode 6 input pull-down
-         0x0B0 0x26      // Mode 6 input pull-down
-         0x0B8 0x26      // Mode 6 input pull-down
+         0x1A4 0x26      // Mode 6 input pull-down
+         0x1AC 0x26      // Mode 6 input pull-down
+         0x038 0x26      // Mode 6 input pull-down
+         0x03C 0x26      // Mode 6 input pull-down
          
          0x0A8 0x0D	     // Mode 5 output non-pull
          0x0AC 0x0D	     // Mode 5 output non-pull

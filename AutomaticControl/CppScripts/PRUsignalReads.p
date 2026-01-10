@@ -30,6 +30,7 @@
 // - xBBO instructions when using directly registers. Slower, probably between 3 and 5 clock cycles
 
 // r0 is arbitrary used for operations
+// r1 is reserved for the detection mask
 // r2 reserved mapping control register
 
 // r3 individual channel counter 1
@@ -102,7 +103,7 @@ INITIATIONS:// This is only run once
 
 	// Initializations - some, just in case
 	LDI		r9, 0 // initialize to 0
-	// Initializations for faster execution
+	MOV		r1, 0x0000C0A0 // Detection mask
 	LDI		r7, 0 // Register for clearing other registers
 	MOV 	r20, EXITCOUNTER // Maximum value to start with to exit if nothing happens
 
@@ -157,31 +158,25 @@ WAIT_FOR_EVENT: // At least dark counts will be detected so detections will happ
 	// Check if the timer is done
 	LBBO	r9, r13, 0+2, 1 // Read the relevant byte value of DWT_CYCNT.
 	QBLE    FINISH, r9, 128 //Timer done. Equivalent to 40 ms
-	// Then measure what should be 1 (for edge detection)
-
-	MOV		r8, r31 // DUMMY
-	
+	// Then measure what should be 1 (for edge detection)	
 	MOV		r8.w0, r31.w0 // Consecutive red for edge detection
-
-	//MOV		r8.b0, r31.b0 // Consecutive red for edge detection
-	//AND		r8, r8, 0x000000F0 // Mask to make sure there are no other info
-
+	AND		r8, r8, r1 // Mask to make sure there are no other info
 CHECKDET:		
 	QBEQ 	WAIT_FOR_EVENT, r8, 0//QBEQ 	WAIT_FOR_EVENT, r6.w0, 0 //all the b0 above can be converted to w0 to capture more channels, but then in the channel tag recorded has to be increaed and appropiatelly handled in c++ (also the number of tags per run has to be reduced)
 	// If the program reaches this point, at least one of the bits is high
 
-	MOV		r8, 0x00000000 // Dummy
+	MOV		r8, r1 // Dummy
 
 COUNTERS:
 	SUB 	r20, r20, 1 // Substract 1 to the exit counter
 	LDI		r10, 0 // Clear value of r10
-	LSR		r8, r8, 4 // Move relevant bits to the right
+	LSR		r8, r8, 5 // Move relevant bits to the right
 	AND		r10, r8, 1 // Move relevant bit to r10
 	ADD		r3, r3, r10 // Increase counter 1 by r10
-	LSR		r8, r8, 1 // Move relevant bits to the right
+	LSR		r8, r8, 2 // Move relevant bits to the right
 	AND		r10, r8, 1 // Move relevant bit to r10
 	ADD		r4, r4, r10 // Increase counter 2 by r10
-	LSR		r8, r8, 1 // Move relevant bits to the right
+	LSR		r8, r8, 7 // Move relevant bits to the right
 	AND		r10, r8, 1 // Move relevant bit to r10
 	ADD		r5, r5, r10 // Increase counter 3 by r10
 	LSR		r8, r8, 1 // Move relevant bits to the right
