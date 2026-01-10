@@ -168,7 +168,7 @@ CHECKDET:
 	QBEQ 	WAIT_FOR_EVENT, r8, 0//QBEQ 	WAIT_FOR_EVENT, r6.w0, 0 //all the b0 above can be converted to w0 to capture more channels, but then in the channel tag recorded has to be increaed and appropiatelly handled in c++ (also the number of tags per run has to be reduced)
 	// If the program reaches this point, at least one of the bits is high
 
-	ADD		r3, r3, 1 // Dummy
+	LDI		r8, 0x000000F0 // Dummy
 
 COUNTERS:
 	SUB 	r20, r20, 1 // Substract 1 to the exit counter
