@@ -840,7 +840,11 @@ int main(int argc, char const * argv[]){
                // ErrorHandling Throw An Exception Etc.
            }
 
-	            //cout << "Ctrl+x pressed!" << endl;           	
+	        
+
+        } // switch
+
+            //cout << "Ctrl+x pressed!" << endl;           	
            	if (read(STDIN_FILENO, &KeyboardC, 1) == 1) {
 	            // Pressed key handling
 	            if (GPIOagent.getState() == GPIO::APPLICATION_PAUSED){
@@ -852,8 +856,6 @@ int main(int argc, char const * argv[]){
 	            	std::cout << "System paused. Press Ctrl+A to resume..." << std::endl;
 	            }
 	           }
-
-        } // switch
         
 	//if (signalReceivedFlag.load()){GPIOagent.~GPIO();}// Destroy the instance// done somewhere else
     // Time wall
