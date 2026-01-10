@@ -714,7 +714,7 @@ bool GPIO::checkCtrlX() {
     char key;
     // Read without waiting (non-blocking)
     if (read(STDIN_FILENO, &key, 1) > 0) {
-        return (key == 24);  // Ctrl+X = ASCII 24
+        return (key == ' ');  // Ctrl+X = ASCII 24
     }
     return false;
 }
