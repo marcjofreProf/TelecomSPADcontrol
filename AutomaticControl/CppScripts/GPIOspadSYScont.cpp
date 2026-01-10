@@ -26,6 +26,7 @@ Script for PRU real-time handling of multi SPAD system
 #include<unistd.h>
 #include<algorithm> // For std::nth_element
 #include<signal.h>
+#include <termios.h> // For termios detection of keyboard keys
 // Watchdog
 #include <sys/ioctl.h>
 #include <linux/watchdog.h>
@@ -211,12 +212,36 @@ bool GPIO::setMaxRrPriority(int PriorityValAux){// For rapidly handling interrup
 	}
 	return true;
 }
-
+///////////////////////////////
+// Pressed key handling
+/*
+{}
+	switch(s) {
+        case SIGINT:// Ctrl+C
+            std::cout << "Caught SIGINT (Ctrl+C)" << std::endl;
+            m_exit();
+            break;
+        case SIGTSTPRES: // Ctrl+Z // Stop, then if pressed again resume
+            std::cout << "Caught SIGSTP/Resume" << std::endl;
+            if (getState() == APPLICATION_PAUSED){
+            	m_resume();
+            	std::cout << "System resumed. Press Ctrl+A to pause..." << std::endl;
+            }
+            else{
+            	m_pause();
+            	std::cout << "System paused. Press Ctrl+A to resume..." << std::endl;
+            }
+            break;
+        default:
+            std::cout << "Caught other Keyboard signal" << std::endl;
+    }
+}
+*/
 /// Errors handling
 std::atomic<bool> signalReceivedFlag{false};
 static void SignalINTHandler(int s) {
 signalReceivedFlag.store(true);
-cout << "Caught SIGINT" << endl;
+cout << "Caught SIGPIPE" << endl;
 }
 
 static void SignalPIPEHandler(int s) {

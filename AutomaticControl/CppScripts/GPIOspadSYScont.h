@@ -114,14 +114,14 @@ public:	// Functions/Methods
 	// PRU synchronization
 	int NonBusyTimeWall();
 	// Managing status of this Agent
-    ApplicationState getState() const { return m_state; }	
-    bool m_start() { m_state = APPLICATION_RUNNING; return true; }
-    bool m_pause() { m_state = APPLICATION_PAUSED; return true; } 
-    // resume may keep track of time if the application uses a timer.
+	// resume may keep track of time if the application uses a timer.
     // This is what makes it different than start() where the timer
     // in start() would be initialized to 0. And the last time before
     // paused was trigger would be saved, and then reset as new starting
     // time for your timer or counter. 
+    ApplicationState getState() const { return m_state; }    
+    bool m_start() { m_state = APPLICATION_RUNNING; return true; }
+    bool m_pause() { m_state = APPLICATION_PAUSED; return true; }    
     bool m_resume() { m_state = APPLICATION_RUNNING; return true; }      
     bool m_exit() { m_state = APPLICATION_EXIT;  return false; }
 	int InitAgentProcess();
