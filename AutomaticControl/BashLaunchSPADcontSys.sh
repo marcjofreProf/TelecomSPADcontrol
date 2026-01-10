@@ -202,10 +202,9 @@ sudo config-pin p9_31 spi_sclk
 # Actual cpp automatic control program
 # Pass arguments
 # Initial DC voltage value (e.g., 55.0) with decimal values
-echo "Application launched with PID: $APP_PID"
 echo "Press:"
 echo "  Ctrl+C to terminate"
-echo "  Press any key to pause/resume"
+echo "  Any key to pause/resume"
 
 sudo nice -n $NicenestPriorValue ./CppScripts/GPIOspadSYScont 55.0 # &
 

@@ -775,10 +775,8 @@ int main(int argc, char const * argv[]){
     termios oldt, newt;
     tcgetattr(STDIN_FILENO, &oldt);
     newt = oldt;
-    // NON-CANONICAL MODE + NO ECHO
-    newt.c_lflag &= ~(ICANON | ECHO);
-    newt.c_cc[VMIN] = 1;  // read 1 character at a time
-    newt.c_cc[VTIME] = 0;
+    // Only disable echo, keep canonical mode
+    newt.c_lflag &= ~ECHO;
     tcsetattr(STDIN_FILENO, TCSANOW, &newt);
 
     char KeyboardC;
