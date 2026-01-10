@@ -1,4 +1,4 @@
-// PRUassTaggDetScriptSimple.p
+// PRUsignalReads.p
 // Time Tagging functionality on PRU0 with Shared Memory Access (not Direct Memory Access nor DDR)
 // It is pending studying if it is worth making use of DMA or DDR in terms of larger memory space or transfer speed
 

@@ -34,7 +34,7 @@ using std::ofstream;
 using std::ifstream;
 using std::fstream;
 
-#define WaitTimeAfterMainWhileLoop 990000000 //nanoseconds. Maximum 999999999
+#define WaitTimeAfterMainWhileLoop 500000000 //nanoseconds. Maximum 999999999
 #define PRUclockStepPeriodNanoseconds		5.00000 //4.99999 // Very critical parameter experimentally assessed. PRU clock cycle time in nanoseconds. Specs says 5ns, but maybe more realistic is the 24 MHz clock is a bit higher and then multiplied by 8
 
 namespace exploringBB {
@@ -68,7 +68,7 @@ private:// Variables
 	std::atomic<bool> ManualSemaphoreExtra{false};
 	std::thread threadRefSynch; // Process thread that executes requests/petitions without blocking
 	// Time/synchronization management
-	struct my_clock
+	struct my_clockChrono
 	{
 		using duration   = std::chrono::nanoseconds;
 		using rep        = duration::rep;
@@ -79,7 +79,7 @@ private:// Variables
 	    static time_point now()
 	    {
 	    	timespec ts;
-			if (clock_gettime(CLOCK_REALTIME, &ts))// CLOCK_REALTIME//CLOCK_TAI. Seems that CLOCK_TAI does not work with timerfd
+			if (clock_gettime(CLOCK_MONOTONIC, &ts))// CLOCK_MONOTONIC: since we want to actuate at the same interval lengths // CLOCK_REALTIME//CLOCK_TAI. Seems that CLOCK_TAI does not work with timerfd
 				throw 1;
 			using sec = std::chrono::seconds;
 			return time_point{sec{ts.tv_sec}+duration{ts.tv_nsec}};
@@ -89,18 +89,11 @@ private:// Variables
 	int WaitTimeInterruptPRU0=7500000; //up to 20000000 with Simple TTG. In microseconds
 	int WaitTimeInterruptPRU1=7500000; // In microseconds. 
 
-	unsigned long long int TimePRU1synchPeriod=100000000; // In nanoseconds and multiple of PRUclockStepPeriodNanoseconds// The faster the more corrections, and less time passed since last correction, but more averaging needed. Also, there is a limit on the lower limit to procees and handle interrupts. Also, the sorter the more error in the correct estimation, since there has not elapsed enough time to compute a tendency (it also happens with PRUdetCorrRelFreq() method whre a separation TagsSeparationDetRelFreq is inserted). The limit might be the error at each iteration, if the error becomes too small, then it cannot be corrected. Anyway, with a better hardware clock (more stable) the correctioons can be done more separated in time).
-	using Clock = my_clock;//Clock = std::chrono::system_clock;// Since we use a time sleep, it might make sense a system_clock//tai_clock, system_clock or steady_clock;
-	using TimePoint = std::chrono::time_point<Clock>;
-	TimePoint QPLAFutureTimePoint=std::chrono::time_point<Clock>();// For matching trigger signals and timetagging
-	TimePoint TimePointClockCurrentSynchPRU1future=std::chrono::time_point<Clock>();// For synch purposes
-	unsigned long TimePRUcommandDelay=250000;//250000;// In nanoseconds. If too large, it disastabilizes the timming performance. Very important parameter!!! When duration_FinalInitialMeasTrigAuxAvg properly set then is around 4000
-	int tfd; // Timer. Attention: // close the time descriptor in the destructor
-	fd_set rfds;
-	struct timeval TimerTimeout;
-	int duration_FinalInitialMeasTrigAuxAvg=0;
+	using ClockChrono = my_clockChrono;//Clock = std::chrono::system_clock;// Since we use a time sleep, it might make sense a system_clock//tai_clock, system_clock or steady_clock;
+	using TimePointChrono = std::chrono::time_point<ClockChrono>;
+	TimePointChrono TimePointClockCurrentSynchPRU0future=std::chrono::time_point<Clock>();// For synch purposes
+	struct timespec requestTimeWait;
 	// PRU
-	static int mem_fd;
 	static void *ddrMem, *sharedMem, *pru0dataMem, *pru1dataMem;
 	static void *pru_int;       // Points to start of PRU memory.
 	//static int chunk;
@@ -133,6 +126,8 @@ private:// Variables
 public:	// Functions/Methods
 	// PRU
 	GPIO(); // initializates PRU operation
+	// PRU synchronization
+	int NonBusyTimeWall();
 	// Managing status of this Agent
     ApplicationState getState() const { return m_state; }	
     bool m_start() { m_state = APPLICATION_RUNNING; return true; }
@@ -160,9 +155,7 @@ private: // Functions/Methods
 	bool setMaxRrPriority(int PriorityValAux);
 	// Sempahore
 	void acquire();
-	void release();
-	// PRU synchronization
-	struct timespec SetWhileWait();	
+	void release();		
 	// Data processing
 	int DDRdumpdata();
 	int ReadTimeCounts();// Read the associated SPAD counters

@@ -217,6 +217,17 @@ GPIO::GPIO(){// Redeclaration of constructor GPIOspadSYScont when no argument is
 	std::cout << "  Speed: " << spi_speed << " Hz" << std::endl;
 
 	spiTransferByte(spi_fd, 0xFF); // Set initial value
+
+	// Set initial Time Wall
+	TimePointClockCurrentSynchPRU0future=ClockChrono::now()+std::chrono::nanoseconds(WaitTimeAfterMainWhileLoop);
+	
+	auto duration_since_epochFutureTimePoint=TimePointClockCurrentSynchPRU0future.time_since_epoch();
+	// Convert duration to desired time
+	long long int TimePointClockCurrentFinal_time_as_count = static_cast<long long int>(std::chrono::duration_cast<std::chrono::nanoseconds>(duration_since_epochFutureTimePoint).count());
+	//cout << "TimePointClockCurrentFinal_time_as_count: " << TimePointClockCurrentFinal_time_as_count << endl;
+
+	requestTimeWait.tv_sec=(int)(TimePointClockCurrentFinal_time_as_count/((long)1000000000));
+	requestTimeWait.tv_nsec=(long)(TimePointClockCurrentFinal_time_as_count%(long)1000000000);
 }
 
 int GPIO::InitAgentProcess(){
@@ -380,48 +391,29 @@ int GPIO::SPIrampVoltage(int spi_fdAux, float desired_voltage, float max_rate, b
     return 0;
 }
 //////////////////////////////////////////////
-struct timespec GPIO::SetWhileWait(){
-	struct timespec requestWhileWaitAux;
-	this->TimePointClockCurrentSynchPRU1future=this->TimePointClockCurrentSynchPRU1future+std::chrono::nanoseconds(this->TimePRU1synchPeriod);
+int GPIO::NonBusyTimeWall(){
+	clock_nanosleep(CLOCK_MONOTONIC,TIMER_ABSTIME,&requestTimeWait,NULL); // Non-busy wait
+	TimePointClockCurrentSynchPRU0future=TimePointClockCurrentSynchPRU0future+std::chrono::nanoseconds(WaitTimeAfterMainWhileLoop);
 	
-	auto duration_since_epochFutureTimePoint=this->TimePointClockCurrentSynchPRU1future.time_since_epoch();
+	auto duration_since_epochFutureTimePoint=TimePointClockCurrentSynchPRU0future.time_since_epoch();
 	// Convert duration to desired time
-	long long int TimePointClockCurrentFinal_time_as_count = static_cast<long long int>(std::chrono::duration_cast<std::chrono::nanoseconds>(duration_since_epochFutureTimePoint).count())-static_cast<long long int>(2*TimePRUcommandDelay); // Add an offset, since the final barrier is implemented with a busy wait
+	long long int TimePointClockCurrentFinal_time_as_count = static_cast<long long int>(std::chrono::duration_cast<std::chrono::nanoseconds>(duration_since_epochFutureTimePoint).count());
 	//cout << "TimePointClockCurrentFinal_time_as_count: " << TimePointClockCurrentFinal_time_as_count << endl;
 
-	requestWhileWaitAux.tv_sec=(int)(TimePointClockCurrentFinal_time_as_count/((long)1000000000));
-	requestWhileWaitAux.tv_nsec=(long)(TimePointClockCurrentFinal_time_as_count%(long)1000000000);
+	requestTimeWait.tv_sec=(int)(TimePointClockCurrentFinal_time_as_count/((long)1000000000));
+	requestTimeWait.tv_nsec=(long)(TimePointClockCurrentFinal_time_as_count%(long)1000000000);
 
-	// Timer file descriptor sets an interrupt that if not commented (when not in use) produces a long reaction time in the while loop (busy wait)
-	//if (this->iIterPRUcurrentTimerVal==0){ // Needed to configure it only at the first iteration
-	// By forcing it to renew the timerfd everytime, the awakenen time is not advanced (which probably is better)
-		TimePointClockCurrentFinal_time_as_count = static_cast<long long int>(std::chrono::duration_cast<std::chrono::nanoseconds>(duration_since_epochFutureTimePoint).count());//-static_cast<long long int>(this->TimeClockMarging); // Add an offset, since the final barrier is implemented with a busy wait 
-		//cout << "TimePointClockCurrentFinal_time_as_count: " << TimePointClockCurrentFinal_time_as_count << endl;
-		
-	    TimerTimeout.tv_sec = (int)((5*TimePRUcommandDelay)/((long)1000000000)); 
-	    TimerTimeout.tv_usec = (long)((5*TimePRUcommandDelay)%(long)1000000000);
-
-	    struct itimerspec its;
-	    its.it_interval.tv_sec = (int)(static_cast<unsigned long long int>(static_cast<int>(TimePRU1synchPeriod)-duration_FinalInitialMeasTrigAuxAvg)/((long)1000000000));  // Periodic interval expiration // Make it periodic to try to be more deterministic. No interval, one-shot timer
-	    its.it_interval.tv_nsec = (long)(static_cast<unsigned long long int>(static_cast<int>(TimePRU1synchPeriod)-duration_FinalInitialMeasTrigAuxAvg)%(long)1000000000);
-	    its.it_value.tv_sec=(int)((TimePointClockCurrentFinal_time_as_count-static_cast<long long int>(duration_FinalInitialMeasTrigAuxAvg))/((long)1000000000)); // Initial expiration
-		its.it_value.tv_nsec=(long)((TimePointClockCurrentFinal_time_as_count-static_cast<long long int>(duration_FinalInitialMeasTrigAuxAvg))%(long)1000000000);
-
-		timerfd_settime(this->tfd, TFD_TIMER_ABSTIME, &its, NULL);
-
-		// Watch timefd file descriptor
-	    FD_ZERO(&rfds);
-	    FD_SET(this->tfd, &rfds);
-	//}
-
-	return requestWhileWaitAux;
+	return 0;
 }
 
 int GPIO::HandleInterruptPRUs(){ // Uses output pins to clock subsystems physically generating qubits or entangled qubits
 
 //ReadTimeCounts();
 // TODO: Do calculations with the counts retrieved
+// Prepare adjustments and communicate to the signal PRU thorugh internal interrupts
 //SendControlSignals(); // Already launched at the beggining
+// Apply DC bias adjustments
+//SPIrampVoltage(int spi_fd, desired_voltage_current, 2.0, false);
 
 return 0;// All ok
 }
@@ -841,46 +833,7 @@ int GPIO::LOCAL_DDMinit(){
     
     prussdrv_map_prumem(PRUSS0_PRU1_DATARAM, &pru1dataMem);// Maps the PRU1 DRAM memory to input pointer. Memory is then accessed by an array.
     pru1dataMem_int = (unsigned int*) pru1dataMem;
-    /*
-    // open the device 
-    mem_fd = open("/dev/mem", O_RDWR);
-    if (mem_fd < 0) {
-        perror("Failed to open /dev/mem: ");
-        return -1;
-    }	
-
-    // map the DDR memory
-    ddrMem = mmap(0, 0x0FFFFFFF, PROT_WRITE | PROT_READ, MAP_SHARED, mem_fd, DDR_BASEADDR);
-    if (ddrMem == NULL) {
-        perror("Failed to map the device: ");
-        close(mem_fd);
-        return -1;
-    }*/
-    /*
-    mem_fd = open ("/dev/mem", O_RDWR | O_SYNC);
-    if (mem_fd == -1) {
-        printf ("ERROR: could not open /dev/mem.\n\n");
-        return -1;
-    }
-    pru_int = mmap (0, PRU_LEN, PROT_READ | PROT_WRITE, MAP_SHARED, mem_fd, PRU_ADDR);
-    if (pru_int == MAP_FAILED) {
-        printf ("ERROR: could not map memory.\n\n");
-        return -1;
-    }*/
     
-    //pru0dataMem_int =     (unsigned int*)pru_int + PRU0_DATARAM/4 + DATARAMoffset/4;   // Points to 0x200 of PRU0 memory
-    //pru1dataMem_int =     (unsigned int*)pru_int + PRU1_DATARAM/4 + DATARAMoffset/4;   // Points to 0x200 of PRU1 memory
-    //sharedMem_int   = 	  (unsigned int*)pru_int + SHAREDRAM/4; // Points to start of shared memory
-    /*
-    prussdrv_map_prumem(PRUSS0_PRU0_DATARAM, &pru0dataMem);// Maps the PRU0 DRAM memory to input pointer. Memory is then accessed by an array.
-    pru0dataMem_int = (unsigned int*)pru0dataMem;// + DATARAMoffset/4;
-    
-    sharedMem_int = (unsigned int*)pru0dataMem + SHAREDRAM/4;
-    
-    prussdrv_map_prumem(PRUSS0_PRU1_DATARAM, &pru1dataMem);// Maps the PRU1 DRAM memory to input pointer. Memory is then accessed by an array.
-    pru1dataMem_int = (unsigned int*)pru1dataMem;// + DATARAMoffset/4;   
-    */
-
     return 0;
 }
 
@@ -923,13 +876,9 @@ GPIO::~GPIO() { // Destructor
 	spiTransferByte(spi_fd, 0xFF); // Set final value	
 	sleep(0.5); // Give time to load to the PRU memory and send the values to spi
 	close(spi_fd); // Close SPI file descriptor
-	this->threadRefSynch.join();	
+	//this->threadRefSynch.join();	
 	this->DisablePRUs();
-	//fclose(outfile); 
 	prussdrv_exit();
-	close(tfd);// close the time descriptor
-	//munmap(ddrMem, 0x0FFFFFFF);
-	//close(mem_fd); // Device
 	cout << "Exit GPIOspadSYScont done!" << endl;
 }
 
@@ -986,7 +935,7 @@ int main(int argc, char const * argv[]){
  	//CKPDagent.acquire();
    //try{
  	//try {
-    	// Code that might throw an exception 
+    // Code that might throw an exception 
  	// Check if there are need messages or actions to be done by the node
  	
        switch(GPIOagent.getState()) {
@@ -995,7 +944,7 @@ int main(int argc, char const * argv[]){
                GPIOagent.HandleInterruptPRUs();
                break;
            }
-           case GPIO::APPLICATION_PAUSED: {
+           case GPIO::APPLICATION_PAUSED: { // When no corrections are aimed (maybe because they are true signal detections periods)
                // Maybe do some checks if necessary 
                break;
            }
@@ -1008,8 +957,10 @@ int main(int argc, char const * argv[]){
 
         } // switch
         
-	//if (signalReceivedFlag.load()){GPIOagent.~GPIO();}// Destroy the instance
-    GPIOagent.RelativeNanoSleepWait((unsigned int)(WaitTimeAfterMainWhileLoop));
+	//if (signalReceivedFlag.load()){GPIOagent.~GPIO();}// Destroy the instance// done somewhere else
+    // Time wall
+    //GPIOagent.RelativeNanoSleepWait((unsigned int)(WaitTimeAfterMainWhileLoop)); // Like this, it will depend on how long in time the previous functions have lasted
+    GPIOagent.NonBusyTimeWall();// Used with non-busy wait
         
     //}
     //catch (const std::exception& e) {

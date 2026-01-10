@@ -4,7 +4,7 @@
  // tree overlay!  
  //  
  // Assemble in BBB with:  
- // pasm -b PRUassTrigSigScriptHist4Sig.p
+ // sudo pasm -b PRUsignalWrites.p
  // https://www.ofitselfso.com/BBBCSIO/Help/BBBCSIOHelp_PRUPinInOutExamplePASMCode.html
  
 .origin 0				// start of program in PRU memory
