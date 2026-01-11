@@ -290,10 +290,10 @@ int GPIO::SPIrampVoltage(int spi_fdAux, float desired_voltage, float max_rate, b
     if (desired_voltage < MIN_V || desired_voltage > MAX_V) return -1;
     if (max_rate <= 0) return -2;
     
-    // Check if already at target (within 0.25V tolerance)
-    if (fabs(currentVoltageValue - desired_voltage) < 0.25) {
-        currentVoltageValue = desired_voltage;
-        if (verbose) cout << "At target: " << fixed << setprecision(2) << desired_voltage << "V" << endl;
+    // Check if already at target (within 0.2V tolerance)
+    if (fabs(currentVoltageValue - desired_voltage) < 0.2) {
+        //currentVoltageValue = desired_voltage; // Dangerous because it could actually not be upated
+        if (verbose) cout << "At target: " << fixed << setprecision(2) << currentVoltageValue << "V" << endl;
         return 0;
     }
     
