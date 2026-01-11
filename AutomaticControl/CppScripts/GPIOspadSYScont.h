@@ -103,14 +103,14 @@ private:// Variables
 
 	// PRU signals settings
 	unsigned int pru1_cycles_period = 256; // Initial number of clocks per cycle (it has to be power of 2)
-	unsigned int  pru1_delay_first_off = 30; // Initial number of relative clocks/2 - 1 of the first off. At least 1.
-	unsigned int  pru1_delay_second_off = 1; // Initial number of relative clocks/2 - 1 of the second off. At least 1.
-	unsigned int  pru1_delay_third_off = 1; // Initial number of relative clocks/2 - 1 of the third off. At least 1.
-	unsigned int  pru1_delay_fourth_off = 1; // Initial number of relative clocks/2 - 1 of the fourth off. At least 1.
-	unsigned int  pru1_mask_first_off = 0; // Initial mask of the first off
-	unsigned int  pru1_mask_second_off = 0; // Initial mask of the second also off
-	unsigned int  pru1_mask_third_off = 0; // Initial mask of the third also off
-	unsigned int  pru1_mask_fourth_off = 0; // Initial mask of the fourth also off
+	unsigned int pru1_delay_first_off = 30; // Initial number of relative clocks/2 - 1 of the first off. At least 1.
+	unsigned int pru1_delay_second_off = 1; // Initial number of relative clocks/2 - 1 of the second off. At least 1.
+	unsigned int pru1_delay_third_off = 1; // Initial number of relative clocks/2 - 1 of the third off. At least 1.
+	unsigned int pru1_delay_fourth_off = 1; // Initial number of relative clocks/2 - 1 of the fourth off. At least 1.
+	unsigned int pru1_mask_first_off = 0; // Initial mask of the first off
+	unsigned int pru1_mask_second_off = 0; // Initial mask of the second also off
+	unsigned int pru1_mask_third_off = 0; // Initial mask of the third also off
+	unsigned int pru1_mask_fourth_off = 0; // Initial mask of the fourth also off
 
 	// SPI communication
 	// Voltage to SPI conversion constants

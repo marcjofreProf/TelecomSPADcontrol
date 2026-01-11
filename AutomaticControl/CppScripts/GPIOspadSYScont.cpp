@@ -490,6 +490,100 @@ int GPIO::calculateSPADControl(){
 }
 
 int GPIO::updatePRU1values(){
+	// Calculate when each channel turns OFF (in cycles from start)
+    unsigned int off_time[NumDetChannels];
+    for (int i = 0; i < NumDetChannels; i++) {
+        off_time[i] = static_cast<unsigned int>(duty_cycles[i] * (double)pru1_cycles_period);
+    }
+    
+    // Sort channels by turn-off time (earliest first)
+    int order[NumDetChannels] = {0, 1, 2, 3};
+    for (int i = 0; i < NumDetChannels; i++) {
+        for (int j = i + 1; j < NumDetChannels; j++) {
+            if (off_time[order[i]] > off_time[order[j]]) {
+                int temp = order[i];
+                order[i] = order[j];
+                order[j] = temp;
+            }
+        }
+    }
+    
+    // Masks for which bits to CLEAR (0 = turn OFF that channel)
+    pru1_mask_first_off = 0x0F & ~(1u << order[0]);  // Turn OFF this channel
+    pru1_delay_first_off = off_time[order[0]];
+    
+    // Second turn-off
+    if (off_time[order[1]] > pru1_delay_first_off) {
+        pru1_delay_second_off = off_time[order[1]] - pru1_delay_first_off;
+        pru1_mask_second_off = 0x0F & ~(1u << order[1]);  // Turn OFF this channel
+    } else {
+        pru1_delay_second_off = 1;
+        // Both turn off at same time - combine masks
+        pru1_mask_first_off &= ~(1u << order[1]);  // Also turn OFF this channel
+        pru1_mask_second_off = pru1_mask_first_off;     // Same mask
+    }
+    
+    // Third turn-off
+    unsigned int time_to_third = pru1_delay_first_off + pru1_delay_second_off;
+    if (off_time[order[2]] > time_to_third) {
+        pru1_delay_third_off = off_time[order[2]] - time_to_third;
+        pru1_mask_third_off = 0x0F & ~(1u << order[2]);
+    } else {
+        pru1_delay_third_off = 1;
+        if (off_time[order[2]] <= pru1_delay_first_off) {
+            pru1_mask_first_off &= ~(1u << order[2]);
+            pru1_mask_third_off = pru1_mask_first_off;
+        } else {
+            pru1_mask_second_off &= ~(1u << order[2]);
+            pru1_mask_third_off = pru1_mask_second_off;
+        }
+    }
+    
+    // Fourth turn-off
+    unsigned int time_to_fourth = time_to_third + pru1_delay_third_off;
+    if (off_time[order[3]] > time_to_fourth) {
+        pru1_delay_fourth_off = off_time[order[3]] - time_to_fourth;
+        pru1_mask_fourth_off = 0x0F & ~(1u << order[3]);
+    } else {
+        pru1_delay_fourth_off = 1;
+        if (off_time[order[3]] <= pru1_delay_first_off) {
+            pru1_mask_first_off &= ~(1u << order[3]);
+            pru1_mask_fourth_off = pru1_mask_first_off;
+        } else if (off_time[order[3]] <= time_to_third) {
+            pru1_mask_second_off &= ~(1u << order[3]);
+            pru1_mask_fourth_off = pru1_mask_second_off;
+        } else {
+            pru1_mask_third_off &= ~(1u << order[3]);
+            pru1_mask_fourth_off = pru1_mask_third_off;
+        }
+    }
+
+    // Update relative delays to PRU implementation
+    pru1_delay_first_off = pru1_delay_first_off /2 - 1;
+    pru1_delay_second_off = pru1_delay_second_off /2 - 1;
+    pru1_delay_third_off = pru1_delay_third_off /2 - 1;
+    pru1_delay_fourth_off = pru1_delay_fourth_off /2 - 1;
+    
+    // Ensure minimum delay of 1 cycle
+    pru1_delay_first_off = (pru1_delay_first_off < 1) ? 1 : pru1_delay_first_off;
+    pru1_delay_second_off = (pru1_delay_second_off < 1) ? 1 : pru1_delay_second_off;
+    pru1_delay_third_off = (pru1_delay_third_off < 1) ? 1 : pru1_delay_third_off;
+    pru1_delay_fourth_off = (pru1_delay_fourth_off < 1) ? 1 : pru1_delay_fourth_off;
+
+    // Write values to PRU1 RAM memory
+    pru1dataMem_int[1]=static_cast<unsigned int>(pru1_cycles_period); // Initial number of clocks per cycle (it has to be power of 2)
+	pru1dataMem_int[2]=static_cast<unsigned int>(pru1_delay_first_off); // Initial number of relative clocks/2 - 1 of the first off. At least 1.
+	pru1dataMem_int[3]=static_cast<unsigned int>(pru1_delay_second_off); // Initial number of relative clocks/2 - 1 of the second off. At least 1.
+	pru1dataMem_int[4]=static_cast<unsigned int>(pru1_delay_third_off); // Initial number of relative clocks/2 - 1 of the third off. At least 1.
+	pru1dataMem_int[5]=static_cast<unsigned int>(pru1_delay_fourth_off); // Initial number of relative clocks/2 - 1 of the fourth off. At least 1.
+	pru1dataMem_int[6]=static_cast<unsigned int>(pru1_mask_first_off); // Initial mask of the first off
+	pru1dataMem_int[7]=static_cast<unsigned int>(pru1_mask_second_off); // Initial mask of the second also off
+	pru1dataMem_int[8]=static_cast<unsigned int>(pru1_mask_third_off); // Initial mask of the third also off
+	pru1dataMem_int[9]=static_cast<unsigned int>(pru1_mask_fourth_off); // Initial mask of the fourth also off
+	
+	// Send host interupt to PRU1 - no command needed
+	prussdrv_pru_send_event(22);//Send host arm to PRU1 interrupt
+
 	return 0;
 }
 int GPIO::HandleInterruptPRUs(){ // Uses output pins to clock subsystems physically generating qubits or entangled qubits
