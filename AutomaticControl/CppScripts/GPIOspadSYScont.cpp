@@ -372,7 +372,14 @@ int GPIO::SPIrampVoltage(int spi_fdAux, float desired_voltage, float max_rate, b
 //////////////////////////////////////////////
 int GPIO::NonBusyTimeWall(){
 	clock_nanosleep(CLOCK_MONOTONIC,TIMER_ABSTIME,&requestTimeWait,NULL); // Non-busy wait
-	TimePointClockCurrentSynchPRU0future=TimePointClockCurrentSynchPRU0future+std::chrono::nanoseconds(WaitTimeAfterMainWhileLoop);
+	// Check if we need to resync (time may have already passed)
+	auto now = ClockChrono::now();
+	if (now >= TimePointClockCurrentSynchPRU0future){
+		SetNewFutureTimeWall(); // Recompute synchronization
+	}
+	else{
+		TimePointClockCurrentSynchPRU0future=TimePointClockCurrentSynchPRU0future+std::chrono::nanoseconds(WaitTimeAfterMainWhileLoop);
+	}
 	
 	auto duration_since_epochFutureTimePoint=TimePointClockCurrentSynchPRU0future.time_since_epoch();
 	// Convert duration to desired time
