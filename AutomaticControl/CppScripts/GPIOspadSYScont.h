@@ -161,6 +161,7 @@ public:	// Functions/Methods
 	GPIO(); // initializates PRU operation
 	// PRU synchronization
 	int NonBusyTimeWall();
+	int SetNewFutureTimeWall();
 	// Managing status of this Agent
 	// resume may keep track of time if the application uses a timer.
     // This is what makes it different than start() where the timer

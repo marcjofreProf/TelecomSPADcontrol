@@ -194,9 +194,6 @@ GPIO::GPIO(){// Redeclaration of constructor GPIOspadSYScont when no argument is
 	std::cout << "  Speed: " << spi_speed << " Hz" << std::endl;
 
 	spiTransferByte(spi_fd, 0xFF); // Set initial value
-
-	// Set initial Time Wall
-	TimePointClockCurrentSynchPRU0future=ClockChrono::now()+std::chrono::nanoseconds(WaitTimeAfterMainWhileLoop);
 	
 	auto duration_since_epochFutureTimePoint=TimePointClockCurrentSynchPRU0future.time_since_epoch();
 	// Convert duration to desired time
@@ -840,6 +837,11 @@ clock_nanosleep(CLOCK_REALTIME, 0, &ts, NULL); //
 return 0; // All ok
 }
 
+int GPIO::SetNewFutureTimeWall(){
+	TimePointClockCurrentSynchPRU0future=ClockChrono::now()+std::chrono::nanoseconds(WaitTimeAfterMainWhileLoop);
+	return 0;
+}
+
 int GPIO::KillcodePRUs(){
 	if (prussdrv_exec_program(PRU_Signal_NUM, "./CppScripts/PRUkillSignal1.bin") == -1){
 		if (prussdrv_exec_program(PRU_Signal_NUM, "./PRUkillSignal1.bin") == -1){
@@ -940,6 +942,9 @@ int main(int argc, char const * argv[]){
 	 // First initial volage bias up
 	 GPIOagent.SPIrampVoltage(GPIOagent.spi_fd, initialDesiredDCvoltage, 2.0, true);
 	 GPIOagent.SendControlSignals();
+
+	 // Set initial Time Wall
+	GPIOagent.SetNewFutureTimeWall();
 	 
 	 while(isValidWhileLoop && !signalReceivedFlag.load()){ 
 	 	//CKPDagent.acquire();
@@ -971,6 +976,7 @@ int main(int argc, char const * argv[]){
 	            if (GPIOagent.getState() == GPIO::APPLICATION_PAUSED){
 	            	GPIOagent.m_resume();
 	            	cout << "System resumed. Press any key to pause..." << endl;
+	            	GPIOagent.SetNewFutureTimeWall();
 	            }
 	            else{
 	            	GPIOagent.m_pause();
