@@ -497,10 +497,13 @@ int GPIO::updatePRU1values(){
     }
     
     // Sort channels by turn-off time (earliest first)
+    // ADD TIE-BREAKER: when times are equal, sort by channel number
     int order[NumDetChannels] = {0, 1, 2, 3};
     for (int i = 0; i < NumDetChannels; i++) {
         for (int j = i + 1; j < NumDetChannels; j++) {
-            if (off_time[order[i]] > off_time[order[j]]) {
+            // FIX: Compare both time AND channel number for tie-breaking
+            if (off_time[order[i]] > off_time[order[j]] || 
+                (off_time[order[i]] == off_time[order[j]] && order[i] > order[j])) {
                 int temp = order[i];
                 order[i] = order[j];
                 order[j] = temp;
