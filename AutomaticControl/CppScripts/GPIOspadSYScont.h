@@ -34,7 +34,7 @@ using std::ofstream;
 using std::ifstream;
 using std::fstream;
 
-#define WaitTimeAfterMainWhileLoop 500000000 //nanoseconds. Maximum 999999999
+#define WaitTimeAfterMainWhileLoop 2000000000 //nanoseconds
 #define PRUclockStepPeriodNanoseconds		5.00000 //4.99999 // Very critical parameter experimentally assessed. PRU clock cycle time in nanoseconds. Specs says 5ns, but maybe more realistic is the 24 MHz clock is a bit higher and then multiplied by 8
 #define NumDetChannels	4
 
