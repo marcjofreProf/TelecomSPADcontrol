@@ -621,7 +621,7 @@ int GPIO::HandleInterruptPRUs(){ // Uses output pins to clock subsystems physica
 	cout << "DDRdumpdata DetCounterCh[2]: " << DetCounterCh[2] << endl;
 	cout << "DDRdumpdata DetCounterCh[3]: " << DetCounterCh[3] << endl;
 
-	cout << "current_desired_voltage: " << current_desired_voltage << endl;
+	cout << "current_desired_voltage: " << current_desired_voltage << "V" << endl;
 	cout << "duty_cycles[0]: " << duty_cycles[0] << endl;
 	cout << "duty_cycles[1]: " << duty_cycles[1] << endl;
 	cout << "duty_cycles[2]: " << duty_cycles[2] << endl;
