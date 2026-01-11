@@ -511,34 +511,44 @@ int GPIO::updatePRU1values(){
         }
     }
     
-    // Masks for which bits to CLEAR (0 = turn OFF that channel)
-    pru1_mask_first_off = 0x0F & ~(1u << order[0]);  // Turn OFF this channel
+    // FIXED MASK LOGIC: Start with all channels ON
+    unsigned int cumulative_mask = 0x0F;  // All channels ON (1111)
+    
+    // First turn-off
+    pru1_mask_first_off = cumulative_mask & ~(1u << order[0]);  // Clear this channel
+    cumulative_mask = pru1_mask_first_off;  // Update cumulative state
     pru1_delay_first_off = off_time[order[0]];
     
     // Second turn-off
     if (off_time[order[1]] > pru1_delay_first_off) {
         pru1_delay_second_off = off_time[order[1]] - pru1_delay_first_off;
-        pru1_mask_second_off = 0x0F & ~(1u << order[1]);  // Turn OFF this channel
+        pru1_mask_second_off = cumulative_mask & ~(1u << order[1]);  // Clear from current state
+        cumulative_mask = pru1_mask_second_off;
     } else {
-        pru1_delay_second_off = 1;
-        // Both turn off at same time - combine masks
-        pru1_mask_first_off &= ~(1u << order[1]);  // Also turn OFF this channel
-        pru1_mask_second_off = pru1_mask_first_off;     // Same mask
+        pru1_delay_second_off = 1;  // 3/2-1 = 1
+        // Turn off this channel from current state
+        pru1_mask_first_off &= ~(1u << order[1]);  // Also clear this channel
+        pru1_mask_second_off = pru1_mask_first_off;  // Same as first (all off so far)
+        cumulative_mask = pru1_mask_first_off;
     }
     
     // Third turn-off
     unsigned int time_to_third = pru1_delay_first_off + pru1_delay_second_off;
     if (off_time[order[2]] > time_to_third) {
         pru1_delay_third_off = off_time[order[2]] - time_to_third;
-        pru1_mask_third_off = 0x0F & ~(1u << order[2]);
+        pru1_mask_third_off = cumulative_mask & ~(1u << order[2]);
+        cumulative_mask = pru1_mask_third_off;
     } else {
         pru1_delay_third_off = 1;
+        // Turn off from whichever mask it coincides with
         if (off_time[order[2]] <= pru1_delay_first_off) {
             pru1_mask_first_off &= ~(1u << order[2]);
             pru1_mask_third_off = pru1_mask_first_off;
+            cumulative_mask = pru1_mask_first_off;
         } else {
             pru1_mask_second_off &= ~(1u << order[2]);
             pru1_mask_third_off = pru1_mask_second_off;
+            cumulative_mask = pru1_mask_second_off;
         }
     }
     
@@ -546,9 +556,10 @@ int GPIO::updatePRU1values(){
     unsigned int time_to_fourth = time_to_third + pru1_delay_third_off;
     if (off_time[order[3]] > time_to_fourth) {
         pru1_delay_fourth_off = off_time[order[3]] - time_to_fourth;
-        pru1_mask_fourth_off = 0x0F & ~(1u << order[3]);
+        pru1_mask_fourth_off = cumulative_mask & ~(1u << order[3]);
     } else {
         pru1_delay_fourth_off = 1;
+        // Turn off from appropriate cumulative state
         if (off_time[order[3]] <= pru1_delay_first_off) {
             pru1_mask_first_off &= ~(1u << order[3]);
             pru1_mask_fourth_off = pru1_mask_first_off;
