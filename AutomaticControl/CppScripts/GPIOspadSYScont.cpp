@@ -485,6 +485,11 @@ int GPIO::calculateSPADControl(){
 	    //	duty_cycles[i]=AVG_DUTY; // Reset value to mid-point
 	    //}
     }
+    // Force some random values for duty cycle for testing
+    duty_cycles[0]=0.35;
+    duty_cycles[1]=0.15;
+    duty_cycles[2]=0.25;
+    duty_cycles[3]=0.45;
 
 	return 0;
 }
