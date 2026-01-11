@@ -615,6 +615,7 @@ int GPIO::HandleInterruptPRUs(){ // Uses output pins to clock subsystems physica
 	SPIrampVoltage(spi_fd, current_desired_voltage, 2.0, true); // Apply DC bias adjustments // Verbose should be turn to false one debugging is complete
 
 	// Debugging
+	std::cout << std::dec; // Force decimal format
 	cout << "DDRdumpdata DetCounterCh[0]: " << DetCounterCh[0] << endl;
 	cout << "DDRdumpdata DetCounterCh[1]: " << DetCounterCh[1] << endl;
 	cout << "DDRdumpdata DetCounterCh[2]: " << DetCounterCh[2] << endl;
@@ -634,6 +635,7 @@ int GPIO::HandleInterruptPRUs(){ // Uses output pins to clock subsystems physica
     std::cout << "pru1_mask_second_off: 0x" << std::hex << pru1_mask_second_off << std::endl;
     std::cout << "pru1_mask_third_off: 0x" << std::hex << pru1_mask_third_off << std::endl;
     std::cout << "pru1_mask_fourth_off: 0x" << std::hex << pru1_mask_fourth_off << std::endl;
+    std::cout << std::dec; // Force decimal format again
 
 	return 0;// All ok
 }
