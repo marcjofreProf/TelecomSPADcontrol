@@ -149,7 +149,7 @@ GPIO::GPIO(){// Redeclaration of constructor GPIOspadSYScont when no argument is
 	////////////////////////////////////////////////////////
 	// Some variables initializations
 	for (int i=0;i<NumDetChannels;i++){
-		duty_cycles[i]=0.5;  // Current duty cycles, will be updated
+		duty_cycles[i]=AVG_DUTY;  // Current duty cycles, will be updated
 		duty_integrals[i]=0.0;  // Need to maintain for each channel
 		duty_prev_errors[i]=0.0;  // Need to maintain for each channel
 	}
@@ -401,13 +401,15 @@ int GPIO::calculateSPADControl(){
     }
     
     // Calculate average and voltage error
+    double avg_cps =0; // Initialization
     double voltage_error=0; // Initialization
     if (numChactive>0){
-	    double avg_cps = total_cps / numChactive;
+	    avg_cps = total_cps / numChactive;
 	    voltage_error = (TARGET_CPS - avg_cps) / (TARGET_CPS);
    	}
    	else{
    		voltage_error = 1.0; // 100% error - we want MORE voltage to get counts
+   		avg_cps = 0; // Average value
    		voltage_prev_error = 0.0; // It has to be reset to zero if no counts for the algorithm to advance
    		voltage_integral = 0.0; // It has to be reset to zero if no counts for the algorithm to advance
    	}
@@ -438,29 +440,39 @@ int GPIO::calculateSPADControl(){
     
     // Update duty cycles for each channel
     for(int i = 0; i < NumDetChannels; i++) {
-    	if (DetCounterCh[i]>0 && numChactive>1){ // Actuate for each individual channel if there are associated detections for more than one channel
-	        double duty_error = (TARGET_CPS - DetCounterCh[i]) / TARGET_CPS;
-	        
-	        double P_duty = Kp_duty * duty_error;
-	        
-	        duty_integrals[i] += duty_error * DT;
-	        if(duty_integrals[i] > duty_integral_limit) duty_integrals[i] = duty_integral_limit;
-	        if(duty_integrals[i] < -duty_integral_limit) duty_integrals[i] = -duty_integral_limit;
-	        double I_duty = Ki_duty * duty_integrals[i];
-	        
-	        double D_duty = Kd_duty * (duty_error - duty_prev_errors[i]) / DT;
-	        duty_prev_errors[i] = duty_error;
-	        
-	        double duty_adj = P_duty + I_duty + D_duty;
-	        duty_cycles[i] += duty_adj;
-	        
-	        // Clamp duty cycle
-	        if(duty_cycles[i] < MIN_DUTY) duty_cycles[i] = MIN_DUTY;
-	        if(duty_cycles[i] > MAX_DUTY) duty_cycles[i] = MAX_DUTY;
-	    }
-	    else{
-	    	duty_cycles[i]=0.5; // Reset value to mid-point
-	    }
+    	//if (DetCounterCh[i]>0 && numChactive>1){ // Actuate for each individual channel if there are associated detections for more than one channel
+    		// Calculate how much this channel deviates from average
+            double deviation = (avg_cps - DetCounterCh[i]) / avg_cps;
+	        // Only adjust if deviation is significant (>5%)
+            if (fabs(deviation) > 0.05) {
+                // Duty PID uses deviation as error (not absolute error)
+                double P_duty = Kp_duty * deviation;
+                
+                duty_integrals[i] += deviation * DT;
+                if(duty_integrals[i] > duty_integral_limit) duty_integrals[i] = duty_integral_limit;
+                if(duty_integrals[i] < -duty_integral_limit) duty_integrals[i] = -duty_integral_limit;
+                double I_duty = Ki_duty * duty_integrals[i];
+                
+                double D_duty = Kd_duty * (deviation - duty_prev_errors[i]) / DT;
+                duty_prev_errors[i] = deviation;
+                
+                double duty_adj = P_duty + I_duty + D_duty;
+                
+                // Adjust duty cycle: increase if channel is below/above average
+                duty_cycles[i] += duty_adj;
+                
+                // Clamp duty cycle
+                if(duty_cycles[i] < MIN_DUTY) duty_cycles[i] = MIN_DUTY;
+                if(duty_cycles[i] > MAX_DUTY) duty_cycles[i] = MAX_DUTY;
+            } else {
+                // Reset PID for this channel if balanced
+                duty_integrals[i] = 0.0;
+                duty_prev_errors[i] = 0.0;
+            }
+	    //}
+	    //else{
+	    //	duty_cycles[i]=AVG_DUTY; // Reset value to mid-point
+	    //}
     }
 
 	return 0;

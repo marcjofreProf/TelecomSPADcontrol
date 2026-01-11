@@ -135,8 +135,9 @@ private:// Variables
     const double TARGET_CPS = 1000.0;  // Target counts per second (background level) for each individual detection channel
     const double MIN_VOLTAGE = 50.0;
     const double MAX_VOLTAGE = 60.0;
-    const double MIN_DUTY = 0.1;
-    const double MAX_DUTY = 0.9;
+    const double AVG_DUTY = 0.3; // Limits to the values of duty cycle
+    const double MIN_DUTY = 0.2; // Limits to the values of duty cycle
+    const double MAX_DUTY = 0.4; // Limits to the values of duty cycle
     const double MAX_V_STEP = 1.5; // At least it has to be larger than 0.2V
     const double DT = PRUmeasInterval/1000000000.0;  // Time Interval of counts measurment
 
