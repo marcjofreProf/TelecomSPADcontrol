@@ -450,7 +450,7 @@ int GPIO::calculateSPADControl(){
 	        if(duty_cycles[i] > MAX_DUTY) duty_cycles[i] = MAX_DUTY;
 	    }
 	    else{
-	    	duty_integrals[i]=0.5; // Reset value to mid-point
+	    	duty_cycles[i]=0.5; // Reset value to mid-point
 	    }
     }
 
