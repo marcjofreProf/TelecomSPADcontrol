@@ -466,11 +466,13 @@ int GPIO::calculateSPADControl(){
 	return 0;
 }
 
+int GPIO::updatePRU1values(){
+	return 0;
+}
 int GPIO::HandleInterruptPRUs(){ // Uses output pins to clock subsystems physically generating qubits or entangled qubits
-
 	ReadTimeCounts(); // Read the counters of detections
 	calculateSPADControl(); // Calculate the adjustmenst to do
-	// Send to signal PRU duty cycle adjustments. TODO
+	updatePRU1values();// Send to signal PRU duty cycle adjustments.
 	SPIrampVoltage(spi_fd, current_desired_voltage, 2.0, true); // Apply DC bias adjustments // Verbose should be turn to false one debugging is complete
 
 	// Debugging

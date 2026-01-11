@@ -208,6 +208,7 @@ private: // Functions/Methods
 	uint8_t spiTransferByte(int spi_fdAux, uint8_t tx);
 	// SPAD control
 	int calculateSPADControl();
+	int updatePRU1values();
 };
 
 } /* namespace exploringBB */
