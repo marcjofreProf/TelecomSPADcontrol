@@ -36,6 +36,7 @@ using std::fstream;
 
 #define WaitTimeAfterMainWhileLoop 500000000 //nanoseconds. Maximum 999999999
 #define PRUclockStepPeriodNanoseconds		5.00000 //4.99999 // Very critical parameter experimentally assessed. PRU clock cycle time in nanoseconds. Specs says 5ns, but maybe more realistic is the 24 MHz clock is a bit higher and then multiplied by 8
+#define NumDetChannels	4
 
 namespace exploringBB {
 
@@ -104,9 +105,42 @@ private:// Variables
     const float MIN_V = 39.5;
     const float MAX_V = 88.7;
     const float RATIO = (MAX_V - MIN_V) / 255.0;
-	float currentSPIvalue=MIN_V; // In volts // Initial value and follow up values storage
+	float currentVoltageValue=MIN_V; // In volts // Initial value and follow up values storage
 	// Detection counters
-	unsigned int DetCounterCh[4]; // Holder of the detections per channel
+	unsigned int DetCounterCh[NumDetChannels]; // Holder of the detections per channel
+	// SPAD control
+	// PID gains - tune these experimentally
+    const double Kp_voltage = 0.15;
+    const double Ki_voltage = 0.05;
+    const double Kd_voltage = 0.02;
+    
+    const double Kp_duty = 0.3;
+    const double Ki_duty = 0.1;
+    const double Kd_duty = 0.05;
+    
+    // Limits
+    const double TARGET_CPS = 1000.0;  // Target counts per second (background level) for each individual detection channel
+    const double MIN_VOLTAGE = 50.0;
+    const double MAX_VOLTAGE = 60.0;
+    const double MIN_DUTY = 0.1;
+    const double MAX_DUTY = 0.9;
+    const double MAX_V_STEP = 0.5;
+    const double DT = WaitTimeAfterMainWhileLoop;  // Time Interval for recalculation/updates
+
+    double duty_cycles[NumDetChannels];  // Current duty cycles, will be updated
+	double current_desired_voltage=0.0;  // Current voltage, will be updated
+	double voltage_integral=0.0;  // Need to maintain
+	double voltage_prev_error=0.0;  // Need to maintain
+	double duty_integrals[NumDetChannels];  // Need to maintain for each channel
+	double duty_prev_errors[NumDetChannels];  // Need to maintain for each channel
+
+	// Rule of thumb: Limit = (Max allowable change) / Ki
+	//double voltage_integral_limit = MAX_V_STEP / Ki_voltage;  // 0.5 / 0.05 = 10.0
+	//double duty_integral_limit = 0.5 / Ki_duty;              // 0.5 / 0.1 = 5.0
+
+	// Or based on control range:
+	double voltage_integral_limit = (MAX_VOLTAGE - MIN_VOLTAGE) / 2.0 / Ki_voltage;
+	double duty_integral_limit = (MAX_DUTY - MIN_DUTY) / 2.0 / Ki_duty;
 
 public:	// Functions/Methods
 	// PRU
@@ -159,6 +193,8 @@ private: // Functions/Methods
 	int IntBubbleSort(int* arr,int MedianFilterFactor);
 	// SPI communications
 	uint8_t spiTransferByte(int spi_fdAux, uint8_t tx);
+	// SPAD control
+	int calculateSPADControl();
 };
 
 } /* namespace exploringBB */

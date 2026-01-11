@@ -136,7 +136,13 @@ GPIO::GPIO(){// Redeclaration of constructor GPIOspadSYScont when no argument is
 
 	////prussdrv_pru_enable(PRU_Signal_NUM);
 	sleep(1); // Give some time to load programs in PRUs and the synch protocols to initiate and lock after prioritazion and adjtimex. Very important, otherwise bad values might be retrieved
-	
+	////////////////////////////////////////////////////////
+	// Some variables initializations
+	for (int i=0;i<NumDetChannels;i++){
+		duty_cycles[i]=0.5;  // Current duty cycles, will be updated
+		duty_integrals[i]=0.0;  // Need to maintain for each channel
+		duty_prev_errors[i]=0.0;  // Need to maintain for each channel
+	}
 	///////////////////////////////////////////////////////
 	//this->setMaxRrPriority();// for the main instance. But it stalls operation in RealTime kernel.
 	//////////////////////////////////////////////////////////
@@ -284,14 +290,14 @@ int GPIO::SPIrampVoltage(int spi_fdAux, float desired_voltage, float max_rate, b
     if (max_rate <= 0) return -2;
     
     // Check if already at target (within 0.25V tolerance)
-    if (fabs(currentSPIvalue - desired_voltage) < 0.25) {
-        currentSPIvalue = desired_voltage;
+    if (fabs(currentVoltageValue - desired_voltage) < 0.25) {
+        currentVoltageValue = desired_voltage;
         if (verbose) cout << "At target: " << fixed << setprecision(2) << desired_voltage << "V" << endl;
         return 0;
     }
     
     // Convert voltages to SPI values
-    int current_spi = 255 - (int)((currentSPIvalue - MIN_V) / RATIO);
+    int current_spi = 255 - (int)((currentVoltageValue - MIN_V) / RATIO);
     int target_spi = 255 - (int)((desired_voltage - MIN_V) / RATIO);
     
     // Clamp
@@ -311,7 +317,7 @@ int GPIO::SPIrampVoltage(int spi_fdAux, float desired_voltage, float max_rate, b
     float step_time = (step_range / max_rate) * decimation * 1000000;
     
     if (verbose) {
-        cout << "Ramping: " << fixed << setprecision(2) << currentSPIvalue << "V -> " << fixed << setprecision(2) << desired_voltage << "V" << endl;
+        cout << "Ramping: " << fixed << setprecision(2) << currentVoltageValue << "V -> " << fixed << setprecision(2) << desired_voltage << "V" << endl;
         cout << "Steps: " << steps << " | Time: " << (step_time * steps / 1000000.0) << "s" << endl;
         cout << "[";
     }
@@ -331,7 +337,7 @@ int GPIO::SPIrampVoltage(int spi_fdAux, float desired_voltage, float max_rate, b
         //cout << "spi_val: 0x" << hex << spi_val << dec << endl;
         
         float voltage = MIN_V + (RATIO * (255 - spi_val));
-        currentSPIvalue = voltage;
+        currentVoltageValue = voltage;
         
         if (verbose) {
             int percent = (i * 100) / steps;
@@ -353,7 +359,7 @@ int GPIO::SPIrampVoltage(int spi_fdAux, float desired_voltage, float max_rate, b
         cout << "\r[========================================] 100% (" << fixed << setprecision(2) << desired_voltage << "V)" << endl;
     }
     
-    currentSPIvalue = desired_voltage;
+    currentVoltageValue = desired_voltage;
     return 0;
 }
 //////////////////////////////////////////////
@@ -372,14 +378,84 @@ int GPIO::NonBusyTimeWall(){
 	return 0;
 }
 
+int GPIO::calculateSPADControl(){
+	current_desired_voltage=currentVoltageValue; // Update value
+	// Calculate counts per second for each channel
+    double total_cps = 0.0;
+    double numChactive=0.0;
+    for(int i = 0; i < NumDetChannels; i++) {
+    	if (DetCounterCh[i]>0){
+        	total_cps += ((double)DetCounterCh[i]) / ((double)DT);
+        	numChactive++;
+        }
+    }
+    
+    // Calculate average and voltage error
+    double avg_cps = total_cps / numChactive;
+    double voltage_error = (numChactive*TARGET_CPS - avg_cps) / (numChactive*TARGET_CPS);
+    
+    // Voltage PID calculation
+    double P_voltage = Kp_voltage * voltage_error;
+    
+    voltage_integral += voltage_error * DT;
+    if(voltage_integral > voltage_integral_limit) voltage_integral = voltage_integral_limit;
+    if(voltage_integral < -voltage_integral_limit) voltage_integral = -voltage_integral_limit;
+    double I_voltage = Ki_voltage * voltage_integral;
+    
+    double D_voltage = Kd_voltage * (voltage_error - voltage_prev_error) / DT;
+    voltage_prev_error = voltage_error;
+    
+    double voltage_adj = P_voltage + I_voltage + D_voltage;
+    
+    // Limit voltage step
+    if(voltage_adj > MAX_V_STEP) voltage_adj = MAX_V_STEP;
+    if(voltage_adj < -MAX_V_STEP) voltage_adj = -MAX_V_STEP;
+    
+    // Update voltage
+    current_desired_voltage += voltage_adj;
+    
+    // Clamp voltage
+    if(current_desired_voltage < MIN_VOLTAGE) current_desired_voltage = MIN_VOLTAGE;
+    if(current_desired_voltage > MAX_VOLTAGE) current_desired_voltage = MAX_VOLTAGE;
+    
+    // Update duty cycles for each channel
+    for(int i = 0; i < NumDetChannels; i++) {
+    	if (DetCounterCh[i]>0){ // Actuate for each individual channel if there are associated detections
+	        double duty_error = (TARGET_CPS - DetCounterCh[i]) / TARGET_CPS;
+	        
+	        double P_duty = Kp_duty * duty_error;
+	        
+	        duty_integrals[i] += duty_error * DT;
+	        if(duty_integrals[i] > duty_integral_limit) duty_integrals[i] = duty_integral_limit;
+	        if(duty_integrals[i] < -duty_integral_limit) duty_integrals[i] = -duty_integral_limit;
+	        double I_duty = Ki_duty * duty_integrals[i];
+	        
+	        double D_duty = Kd_duty * (duty_error - duty_prev_errors[i]) / DT;
+	        duty_prev_errors[i] = duty_error;
+	        
+	        double duty_adj = P_duty + I_duty + D_duty;
+	        duty_cycles[i] += duty_adj;
+	        
+	        // Clamp duty cycle
+	        if(duty_cycles[i] < MIN_DUTY) duty_cycles[i] = MIN_DUTY;
+	        if(duty_cycles[i] > MAX_DUTY) duty_cycles[i] = MAX_DUTY;
+	    }
+    }
+
+	return 0;
+}
+
 int GPIO::HandleInterruptPRUs(){ // Uses output pins to clock subsystems physically generating qubits or entangled qubits
 
 ReadTimeCounts(); // Read the counters of detections
-// TODO: Do calculations with the counts retrieved
-// Prepare adjustments and communicate to the signal PRU thorugh internal interrupts
-//SendControlSignals(); // Already launched at the beggining
-// Apply DC bias adjustments
-//SPIrampVoltage(spi_fd, desired_voltage_current, 2.0, true); // Verbose should be turn to false one debugging is complete
+calculateSPADControl(); // Calculate the adjustmenst to do
+cout << "current_desired_voltage: " << current_desired_voltage << endl;
+cout << "duty_cycles[0]: " << duty_cycles[0] << endl;
+cout << "duty_cycles[1]: " << duty_cycles[1] << endl;
+cout << "duty_cycles[2]: " << duty_cycles[2] << endl;
+cout << "duty_cycles[3]: " << duty_cycles[3] << endl;
+// Send to signal PRU duty cycle adjustments. TODO
+SPIrampVoltage(spi_fd, current_desired_voltage, 2.0, true); // Apply DC bias adjustments // Verbose should be turn to false one debugging is complete
 
 return 0;// All ok
 }
@@ -768,112 +844,108 @@ int main(int argc, char const * argv[]){
  //printf( "argc:     %d\n", argc );
  //printf( "argv[0]:  %s\n", argv[0] );
 
-	if (!isatty(STDIN_FILENO)) std::cerr << "STDIN is NOT a TTY\n";
-    else std::cerr << "STDIN is a TTY\n";
+	if (!isatty(STDIN_FILENO)) cout << "STDIN is NOT a TTY" << endl;
+	else cout << "STDIN is a TTY" << endl;
 
 	// Save terminal settings
-    termios oldt, newt;
-    tcgetattr(STDIN_FILENO, &oldt);
-    newt = oldt;
-    // NON-CANONICAL MODE + NO ECHO
-    newt.c_lflag &= ~(ICANON | ECHO);
-    newt.c_cc[VMIN] = 0;  
-    newt.c_cc[VTIME] = 0;
-    tcsetattr(STDIN_FILENO, TCSANOW, &newt);
+	termios oldt, newt;
+	tcgetattr(STDIN_FILENO, &oldt);
+	newt = oldt;
+	// NON-CANONICAL MODE + NO ECHO
+	newt.c_lflag &= ~(ICANON | ECHO);
+	newt.c_cc[VMIN] = 0;  
+	newt.c_cc[VTIME] = 0;
+	tcsetattr(STDIN_FILENO, TCSANOW, &newt);
 
-    char KeyboardC;
+	char KeyboardC;
  
- float initialDesiredDCvoltage=55.0;
- if ( argc == 1 ) {
- 	cout << "No arguments were passed!" << endl;
- }
- else{
-	 //cout << "Arguments" << endl;
-	 //for (int i = 1; i < argc; ++i ) {
-	 //	printf( "  %d. %s\n", i, argv[i] );
-	 //}
- 	initialDesiredDCvoltage=stof(argv[1]);
- }
- 
- cout << "GPIOspadSYScont started..." << endl;
- 
- GPIO GPIOagent; // Initiate the instance
- 
- GPIOagent.m_start(); // Initiate in start state.
- 
- /// Errors/actions handling
- signal(SIGINT, SignalINTHandler);// Interruption signal
- signal(SIGTERM, SignalTERMHandler); // kill, systemd stop
- //signal(SIGPIPE, SignalPIPEHandler);// Error trying to write/read to a socket
- //signal(SIGSEGV, SignalSegmentationFaultHandler);// Segmentation fault
- 
- bool isValidWhileLoop=true;
- if (GPIOagent.getState()==GPIO::APPLICATION_EXIT){isValidWhileLoop = false;}
- else{isValidWhileLoop = true;}
- 
- //CKPDagent.GenerateSynchClockPRU();// Launch the generation of the clock
- // First initial volage bias up
- GPIOagent.SPIrampVoltage(GPIOagent.spi_fd, initialDesiredDCvoltage, 2.0, true);
- GPIOagent.SendControlSignals();
- 
- while(isValidWhileLoop && !signalReceivedFlag.load()){ 
- 	//CKPDagent.acquire();
-   //try{
- 	//try {
-    // Code that might throw an exception 
- 	// Check if there are need messages or actions to be done by the node
- 	
-       switch(GPIOagent.getState()) {
-           case GPIO::APPLICATION_RUNNING: {               
-               // Do Some Work
-               GPIOagent.HandleInterruptPRUs();
-               break;
-           }
-           case GPIO::APPLICATION_PAUSED: { // When no corrections are aimed (maybe because they are true signal detections periods)
-               // Maybe do some checks if necessary 
-               break;
-           }
-           case GPIO::APPLICATION_EXIT: {                  
-               isValidWhileLoop=false;//break;
-           }
-           default: {
-               // ErrorHandling Throw An Exception Etc.
-           }
-
+	 float initialDesiredDCvoltage=55.0;
+	 if ( argc == 1 ) {
+	 	cout << "No arguments were passed!" << endl;
+	 }
+	 else{
+		 //cout << "Arguments" << endl;
+		 //for (int i = 1; i < argc; ++i ) {
+		 //	printf( "  %d. %s\n", i, argv[i] );
+		 //}
+	 	initialDesiredDCvoltage=stof(argv[1]);
+	 }
+	 
+	 cout << "GPIOspadSYScont started..." << endl;
+	 
+	 GPIO GPIOagent; // Initiate the instance
+	 
+	 GPIOagent.m_start(); // Initiate in start state.
+	 
+	 /// Errors/actions handling
+	 signal(SIGINT, SignalINTHandler);// Interruption signal
+	 signal(SIGTERM, SignalTERMHandler); // kill, systemd stop
+	 //signal(SIGPIPE, SignalPIPEHandler);// Error trying to write/read to a socket
+	 //signal(SIGSEGV, SignalSegmentationFaultHandler);// Segmentation fault
+	 
+	 bool isValidWhileLoop=true;
+	 if (GPIOagent.getState()==GPIO::APPLICATION_EXIT){isValidWhileLoop = false;}
+	 else{isValidWhileLoop = true;}
+	 
+	 //CKPDagent.GenerateSynchClockPRU();// Launch the generation of the clock
+	 // First initial volage bias up
+	 GPIOagent.SPIrampVoltage(GPIOagent.spi_fd, initialDesiredDCvoltage, 2.0, true);
+	 GPIOagent.SendControlSignals();
+	 
+	 while(isValidWhileLoop && !signalReceivedFlag.load()){ 
+	 	//CKPDagent.acquire();
+	   //try{
+	 	//try {
+	    // Code that might throw an exception 
+	 	// Check if there are need messages or actions to be done by the node
+	 	
+	       switch(GPIOagent.getState()) {
+	           case GPIO::APPLICATION_RUNNING: {               
+	               // Do Some Work
+	               GPIOagent.HandleInterruptPRUs();
+	               break;
+	           }
+	           case GPIO::APPLICATION_PAUSED: { // When no corrections are aimed (maybe because they are true signal detections periods)
+	               // Maybe do some checks if necessary 
+	               break;
+	           }
+	           case GPIO::APPLICATION_EXIT: {                  
+	               isValidWhileLoop=false;//break;
+	           }
+	           default: {
+	               // ErrorHandling Throw An Exception Etc.
+	           }
+	        } // switch
+	        //cout << "Ctrl+x pressed!" << endl;           	
+	       	if (read(STDIN_FILENO, &KeyboardC, 1) == 1) {
+	            // Pressed key handling
+	            if (GPIOagent.getState() == GPIO::APPLICATION_PAUSED){
+	            	GPIOagent.m_resume();
+	            	cout << "System resumed. Press any key to pause..." << endl;
+	            }
+	            else{
+	            	GPIOagent.m_pause();
+	            	cout << "System paused. Press any key to resume..." << endl;
+	            }
+	        }
 	        
-
-        } // switch
-
-        //cout << "Ctrl+x pressed!" << endl;           	
-       	if (read(STDIN_FILENO, &KeyboardC, 1) == 1) {
-            // Pressed key handling
-            if (GPIOagent.getState() == GPIO::APPLICATION_PAUSED){
-            	GPIOagent.m_resume();
-            	std::cout << "System resumed. Press any key to pause..." << std::endl;
-            }
-            else{
-            	GPIOagent.m_pause();
-            	std::cout << "System paused. Press any key to resume..." << std::endl;
-            }
-        }
-        
-	//if (signalReceivedFlag.load()){GPIOagent.~GPIO();}// Destroy the instance// done somewhere else
-    // Time wall
-    //GPIOagent.RelativeNanoSleepWait((unsigned int)(WaitTimeAfterMainWhileLoop)); // Like this, it will depend on how long in time the previous functions have lasted
-    GPIOagent.NonBusyTimeWall();// Used with non-busy wait
-        
-    //}
-    //catch (const std::exception& e) {
-    //	// Handle the exception
-    //	cout << "Exception: " << e.what() << endl;
-    //	}
-  //} // upper try
-  //catch (...) { // Catches any exception
-  //cout << "Exception caught" << endl;
-  //  }
-	//CKPDagent.release();
-	//CKPDagent.RelativeNanoSleepWait((unsigned int)(WaitTimeAfterMainWhileLoop));
-    } // while
+		//if (signalReceivedFlag.load()){GPIOagent.~GPIO();}// Destroy the instance// done somewhere else
+	    // Time wall
+	    //GPIOagent.RelativeNanoSleepWait((unsigned int)(WaitTimeAfterMainWhileLoop)); // Like this, it will depend on how long in time the previous functions have lasted
+	    GPIOagent.NonBusyTimeWall();// Used with non-busy wait
+	        
+	    //}
+	    //catch (const std::exception& e) {
+	    //	// Handle the exception
+	    //	cout << "Exception: " << e.what() << endl;
+	    //	}
+	  //} // upper try
+	  //catch (...) { // Catches any exception
+	  //cout << "Exception caught" << endl;
+	  //  }
+		//CKPDagent.release();
+		//CKPDagent.RelativeNanoSleepWait((unsigned int)(WaitTimeAfterMainWhileLoop));
+	    } // while
 
     tcsetattr(STDIN_FILENO, TCSANOW, &oldt); // restore
 
