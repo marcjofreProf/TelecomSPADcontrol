@@ -106,12 +106,13 @@ private:// Variables
     const float MIN_V = 39.5;
     const float MAX_V = 88.7;
     const float RATIO = (MAX_V - MIN_V) / 255.0;
+    const float MIN_SPI_V_STEP=0.2; // comes from the fact that the voltage range is around 50V in 255 values
 	float currentVoltageValue=MIN_V; // In volts // Initial value and follow up values storage
 	// Detection counters
 	unsigned int DetCounterCh[NumDetChannels]; // Holder of the detections per channel
 	// SPAD control
 	// PID gains - tune these experimentally
-    const double Kp_voltage = 0.15;
+    const double Kp_voltage = 0.25; // It has to be larger than the minimum SPI voltage step
     const double Ki_voltage = 0.05;
     const double Kd_voltage = 0.02;
     
