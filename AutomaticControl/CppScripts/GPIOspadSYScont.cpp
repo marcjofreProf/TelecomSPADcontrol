@@ -444,7 +444,7 @@ int GPIO::calculateSPADControl(){
     		// Calculate how much this channel deviates from average
             double deviation = (avg_cps - DetCounterCh[i]) / avg_cps;
 	        // Only adjust if deviation is significant (>5%)
-            if (fabs(deviation) > 0.05) {
+            if (fabs(deviation) > 0.05 && DetCounterCh[i]>0) {
                 // Duty PID uses deviation as error (not absolute error)
                 double P_duty = Kp_duty * deviation;
                 
@@ -464,7 +464,14 @@ int GPIO::calculateSPADControl(){
                 // Clamp duty cycle
                 if(duty_cycles[i] < MIN_DUTY) duty_cycles[i] = MIN_DUTY;
                 if(duty_cycles[i] > MAX_DUTY) duty_cycles[i] = MAX_DUTY;
-            } else {
+            }
+            else{
+            	// Channels are balanced - gradually move toward MID_DUTY
+	            // Add restoring force toward midpoint
+	            double midpoint_error = (AVG_DUTY - duty_cycles[i]) / AVG_DUTY;
+	            double midpoint_adj = 0.1 * midpoint_error;  // Slow convergence	            
+	            duty_cycles[i] += midpoint_adj;
+	            
                 // Reset PID for this channel if balanced
                 duty_integrals[i] = 0.0;
                 duty_prev_errors[i] = 0.0;
