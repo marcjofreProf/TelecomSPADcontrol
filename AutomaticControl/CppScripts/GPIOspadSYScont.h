@@ -34,7 +34,7 @@ using std::ofstream;
 using std::ifstream;
 using std::fstream;
 
-#define WaitTimeAfterMainWhileLoop 2000000000 //nanoseconds. Interval to update the PID adjustments
+#define WaitTimeAfterMainWhileLoop 5000000000 //nanoseconds. Interval to update the PID adjustments
 #define PRUmeasInterval				50000000 // nanoseconds. Interval of duration in time of the mesurement of counts
 #define PRUclockStepPeriodNanoseconds		5.00000 //4.99999 // Very critical parameter experimentally assessed. PRU clock cycle time in nanoseconds. Specs says 5ns, but maybe more realistic is the 24 MHz clock is a bit higher and then multiplied by 8
 #define NumDetChannels	4
