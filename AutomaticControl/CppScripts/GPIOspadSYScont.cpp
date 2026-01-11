@@ -112,11 +112,12 @@ GPIO::GPIO(){// Redeclaration of constructor GPIOspadSYScont when no argument is
 	// Here we can update memory space assigned address
 	CalpHolder=(unsigned int*)&sharedMem_int[OFFSET_SHAREDRAM];
 	
-	// Launch the PRU0 (timetagging) and PR1 (generating signals) codes but put them in idle mode, waiting for command
-	// Timetagging
+	// Launch the PRU0 and PRU1 codes but put them in idle mode, waiting for command
+	// Reading counters
 	// Execute program
 	// Load and execute the PRU program on the PRU0	
 	pru0dataMem_int[0]=static_cast<unsigned int>(0); // set no command
+	pru0dataMem_int[1]=static_cast<unsigned int>(PRUmeasInterval/PRUclockStepPeriodNanoseconds); // Measurement time interval in clock cycles
 	
 	if (prussdrv_exec_program(PRU_Operation_NUM, "./CppScripts/PRUsignalReads.bin") == -1){
 		if (prussdrv_exec_program(PRU_Operation_NUM, "./PRUsignalReads.bin") == -1){
@@ -426,7 +427,7 @@ int GPIO::calculateSPADControl(){
     
     // Update duty cycles for each channel
     for(int i = 0; i < NumDetChannels; i++) {
-    	if (DetCounterCh[i]>0){ // Actuate for each individual channel if there are associated detections
+    	if (DetCounterCh[i]>1){ // Actuate for each individual channel if there are associated detections for more than one channel
 	        double duty_error = (TARGET_CPS - DetCounterCh[i]) / TARGET_CPS;
 	        
 	        double P_duty = Kp_duty * duty_error;

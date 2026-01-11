@@ -44,6 +44,8 @@
 
 // r10 is arbitrary used for operations
 
+// r11 reserved for holding the measurement time interval byte of relevance (third byte)
+
 //// If using the cycle counte rin the PRU (not adjusted to synchronization protocols)
 // We cannot use Constan table pointers since the base addresses are too far
 // r12 reserved for 0x22000 Control register
@@ -130,7 +132,8 @@ INITIATIONS:// This is only run once
 //	SBCO	r0, CONST_IETREG, 0, 4 // Enables IET count and sets configuration
 //	// Deactivate IEP compensation
 //	SBCO 	r7, CONST_IETREG, 0x08, 4
-	
+PRECMDLOOP:
+	LBCO	r11.b0, CONST_PRUDRAM, 6, 1 // Load the value of measurement timer
 CMDLOOP:
 	QBBC	CMDLOOP, r31, 30	// Reception or not of the host interrupt
 	SBCO	r7.b0, C0, 0x24, 1 // Reset host interrupt	
@@ -157,7 +160,7 @@ DWTSTART:
 WAIT_FOR_EVENT: // At least dark counts will be detected so detections will happen
 	// Check if the timer is done
 	LBBO	r9, r13, 0+2, 1 // Read the relevant byte value of DWT_CYCNT.
-	QBLE    FINISH, r9, 128 //Timer done. Equivalent to 40 ms
+	QBLE    FINISH, r9, r11.b0 //Timer done. Equivalent to 50 ms
 	// Then measure what should be 1 (for edge detection)	
 	MOV		r8.w0, r31.w0 // Consecutive red for edge detection
 	AND		r8, r8, r1 // Mask to make sure there are no other info
