@@ -126,7 +126,7 @@ private:// Variables
     const double MIN_DUTY = 0.1;
     const double MAX_DUTY = 0.9;
     const double MAX_V_STEP = 0.5;
-    const double DT = PRUmeasInterval;  // Time Interval of counts measurment
+    const double DT = PRUmeasInterval/1000000000.0;  // Time Interval of counts measurment
 
     double duty_cycles[NumDetChannels];  // Current duty cycles, will be updated
 	double current_desired_voltage=0.0;  // Current voltage, will be updated

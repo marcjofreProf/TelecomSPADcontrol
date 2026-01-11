@@ -427,7 +427,7 @@ int GPIO::calculateSPADControl(){
     
     // Update duty cycles for each channel
     for(int i = 0; i < NumDetChannels; i++) {
-    	if (DetCounterCh[i]>1){ // Actuate for each individual channel if there are associated detections for more than one channel
+    	if (DetCounterCh[i]>0 && numChactive>1){ // Actuate for each individual channel if there are associated detections for more than one channel
 	        double duty_error = (TARGET_CPS - DetCounterCh[i]) / TARGET_CPS;
 	        
 	        double P_duty = Kp_duty * duty_error;
