@@ -162,7 +162,6 @@ FINISH:
 	MOV		r1, NUM_REPETITIONS //SUB		r1, r1, 1 // Decrement counter
 	QBNE	SIGNALON, r1, 0 // condition jump to SIGNALON because we have not finished the number of repetitions
 //	LDI		r4, 0 // Controlled intentional delay to account for the fact that QBNE takes one extra count when it does not go through the barrier
-
 FINISHLOOP:
 	// The following lines do not consume "signal speed"
 	SET     r30.t11	// enable the data bus. it may be necessary to disable the bus to one peripheral while another is in use to prevent conflicts or manage bandwidth.

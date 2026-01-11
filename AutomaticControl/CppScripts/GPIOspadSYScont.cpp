@@ -449,6 +449,9 @@ int GPIO::calculateSPADControl(){
 	        if(duty_cycles[i] < MIN_DUTY) duty_cycles[i] = MIN_DUTY;
 	        if(duty_cycles[i] > MAX_DUTY) duty_cycles[i] = MAX_DUTY;
 	    }
+	    else{
+	    	DetCounterCh[i]=0.5; // Reset value to mid-point
+	    }
     }
 
 	return 0;
