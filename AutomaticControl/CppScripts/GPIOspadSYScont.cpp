@@ -570,6 +570,16 @@ int GPIO::updatePRU1values(){
     pru1_delay_third_off = (pru1_delay_third_off < 1) ? 1 : pru1_delay_third_off;
     pru1_delay_fourth_off = (pru1_delay_fourth_off < 1) ? 1 : pru1_delay_fourth_off;
 
+    // Debugging
+    std::cout << "pru1_delay_first_off: " << pru1_delay_first_off << std::endl;
+    std::cout << "pru1_delay_second_off: " << pru1_delay_second_off << std::endl;
+    std::cout << "pru1_delay_third_off: " << pru1_delay_third_off << std::endl;
+    std::cout << "pru1_delay_fourth_off: " << pru1_delay_fourth_off << std::endl;
+    std::cout << "pru1_mask_first_off: 0x" << std::hex << pru1_mask_first_off << std::endl;
+    std::cout << "pru1_mask_second_off: 0x" << std::hex << pru1_mask_second_off << std::endl;
+    std::cout << "pru1_mask_third_off: 0x" << std::hex << pru1_mask_third_off << std::endl;
+    std::cout << "pru1_mask_fourth_off: 0x" << std::hex << pru1_mask_fourth_off << std::endl;
+
     // Write values to PRU1 RAM memory
     pru1dataMem_int[1]=static_cast<unsigned int>(pru1_cycles_period); // Initial number of clocks per cycle (it has to be power of 2)
 	pru1dataMem_int[2]=static_cast<unsigned int>(pru1_delay_first_off); // Initial number of relative clocks/2 - 1 of the first off. At least 1.
