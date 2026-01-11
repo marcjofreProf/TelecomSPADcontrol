@@ -442,7 +442,7 @@ int GPIO::calculateSPADControl(){
     for(int i = 0; i < NumDetChannels; i++) {
     	//if (DetCounterCh[i]>0 && numChactive>1){ // Actuate for each individual channel if there are associated detections for more than one channel
     		// Calculate how much this channel deviates from average
-            double deviation = (avg_cps - DetCounterCh[i]) / avg_cps;
+            double deviation = (avg_cps - (((double)DetCounterCh[i]) / ((double)DT))) / avg_cps;
 	        // Only adjust if deviation is significant (>5%)
             if (fabs(deviation) > 0.05 && DetCounterCh[i]>0) {
                 // Duty PID uses deviation as error (not absolute error)
@@ -471,7 +471,7 @@ int GPIO::calculateSPADControl(){
 	            double midpoint_error = (AVG_DUTY - duty_cycles[i]) / AVG_DUTY;
 	            double midpoint_adj = 0.1 * midpoint_error;  // Slow convergence	            
 	            duty_cycles[i] += midpoint_adj;
-	            
+
                 // Reset PID for this channel if balanced
                 duty_integrals[i] = 0.0;
                 duty_prev_errors[i] = 0.0;
