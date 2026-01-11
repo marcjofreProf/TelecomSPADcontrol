@@ -559,10 +559,10 @@ int GPIO::updatePRU1values(){
     }
 
     // Update relative delays to PRU implementation
-    pru1_delay_first_off = pru1_delay_first_off /2 - 1;
-    pru1_delay_second_off = pru1_delay_second_off /2 - 1;
-    pru1_delay_third_off = pru1_delay_third_off /2 - 1;
-    pru1_delay_fourth_off = pru1_delay_fourth_off /2 - 1;
+    if (pru1_delay_first_off > 1) pru1_delay_first_off = pru1_delay_first_off / 2 - 1;
+    if (pru1_delay_second_off > 1) pru1_delay_second_off = pru1_delay_second_off / 2 - 1;
+    if (pru1_delay_third_off > 1) pru1_delay_third_off = pru1_delay_third_off / 2 - 1;
+    if (pru1_delay_fourth_off > 1) pru1_delay_fourth_off = pru1_delay_fourth_off / 2 - 1;
     
     // Ensure minimum delay of 1 cycle
     pru1_delay_first_off = (pru1_delay_first_off < 1) ? 1 : pru1_delay_first_off;
@@ -586,6 +586,7 @@ int GPIO::updatePRU1values(){
 
 	return 0;
 }
+
 int GPIO::HandleInterruptPRUs(){ // Uses output pins to clock subsystems physically generating qubits or entangled qubits
 	ReadTimeCounts(); // Read the counters of detections
 	calculateSPADControl(); // Calculate the adjustmenst to do
