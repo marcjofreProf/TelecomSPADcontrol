@@ -400,6 +400,7 @@ int GPIO::calculateSPADControl(){
    	else{
    		voltage_error = 1.0; // 100% error - we want MORE voltage to get counts
    		voltage_prev_error = 0.0; // It has to be reset to zero if no counts for the algorithm to advance
+   		voltage_integral = 0.0; // It has to be reset to zero if no counts for the algorithm to advance
    	}
     
     // Voltage PID calculation
