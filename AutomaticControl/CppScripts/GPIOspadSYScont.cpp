@@ -391,12 +391,13 @@ int GPIO::calculateSPADControl(){
     }
     
     // Calculate average and voltage error
+    double voltage_error=0; // Initialization
     if (numChactive>0){
 	    double avg_cps = total_cps / numChactive;
-	    double voltage_error = (numChactive*TARGET_CPS - avg_cps) / (numChactive*TARGET_CPS);
+	    voltage_error = (numChactive*TARGET_CPS - avg_cps) / (numChactive*TARGET_CPS);
    	}
    	else{
-   		double voltage_error = 1.0; // 100% error - we want MORE voltage to get counts
+   		voltage_error = 1.0; // 100% error - we want MORE voltage to get counts
    	}
     
     // Voltage PID calculation
@@ -452,17 +453,24 @@ int GPIO::calculateSPADControl(){
 
 int GPIO::HandleInterruptPRUs(){ // Uses output pins to clock subsystems physically generating qubits or entangled qubits
 
-ReadTimeCounts(); // Read the counters of detections
-calculateSPADControl(); // Calculate the adjustmenst to do
-cout << "current_desired_voltage: " << current_desired_voltage << endl;
-cout << "duty_cycles[0]: " << duty_cycles[0] << endl;
-cout << "duty_cycles[1]: " << duty_cycles[1] << endl;
-cout << "duty_cycles[2]: " << duty_cycles[2] << endl;
-cout << "duty_cycles[3]: " << duty_cycles[3] << endl;
-// Send to signal PRU duty cycle adjustments. TODO
-SPIrampVoltage(spi_fd, current_desired_voltage, 2.0, true); // Apply DC bias adjustments // Verbose should be turn to false one debugging is complete
+	ReadTimeCounts(); // Read the counters of detections
+	calculateSPADControl(); // Calculate the adjustmenst to do
+	// Send to signal PRU duty cycle adjustments. TODO
+	SPIrampVoltage(spi_fd, current_desired_voltage, 2.0, true); // Apply DC bias adjustments // Verbose should be turn to false one debugging is complete
 
-return 0;// All ok
+	// Debugging
+	cout << "DDRdumpdata DetCounterCh[0]: " << DetCounterCh[0] << endl;
+	cout << "DDRdumpdata DetCounterCh[1]: " << DetCounterCh[1] << endl;
+	cout << "DDRdumpdata DetCounterCh[2]: " << DetCounterCh[2] << endl;
+	cout << "DDRdumpdata DetCounterCh[3]: " << DetCounterCh[3] << endl;
+
+	cout << "current_desired_voltage: " << current_desired_voltage << endl;
+	cout << "duty_cycles[0]: " << duty_cycles[0] << endl;
+	cout << "duty_cycles[1]: " << duty_cycles[1] << endl;
+	cout << "duty_cycles[2]: " << duty_cycles[2] << endl;
+	cout << "duty_cycles[3]: " << duty_cycles[3] << endl;
+
+	return 0;// All ok
 }
 
 int GPIO::ReadTimeCounts(){// Read the SPADs associated counters
@@ -526,10 +534,10 @@ valp++;
 DetCounterCh[3]=static_cast<unsigned int>(*valp);
 
 // Debugging
-cout << "DDRdumpdata DetCounterCh[0]: " << DetCounterCh[0] << endl;
-cout << "DDRdumpdata DetCounterCh[1]: " << DetCounterCh[1] << endl;
-cout << "DDRdumpdata DetCounterCh[2]: " << DetCounterCh[2] << endl;
-cout << "DDRdumpdata DetCounterCh[3]: " << DetCounterCh[3] << endl;
+//cout << "DDRdumpdata DetCounterCh[0]: " << DetCounterCh[0] << endl;
+//cout << "DDRdumpdata DetCounterCh[1]: " << DetCounterCh[1] << endl;
+//cout << "DDRdumpdata DetCounterCh[2]: " << DetCounterCh[2] << endl;
+//cout << "DDRdumpdata DetCounterCh[3]: " << DetCounterCh[3] << endl;
 
 return 0; // all ok
 }
