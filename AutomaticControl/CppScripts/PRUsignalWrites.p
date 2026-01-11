@@ -69,6 +69,11 @@
 // r13 is reserved for third also off mask
 // r14 is reserved for fourth also off mask
 
+// r15 is reserved as double buffer for producing the delay of state first off
+// r16 is reserved as double buffer for producing the delay of state second off
+// r17 is reserved as double buffer for producing the delay of state third off
+// r18 is reserved as double buffer for producing the delay of state fourth off
+
 // r28 is mainly used for LED indicators operations
 // r29 is mainly used for LED indicators operations
 // r30 is reserved for output pins
@@ -112,13 +117,25 @@ INITIATIONS:
 	LDI	r30, 0 // All signal pins down
 	LDI	r4, 0 // zeroing
 	LDI	r0, 0 // Ensure reset commands
+
+	MOV		r2, 256 // The PERIOD CYCLES
+	SUB		r3, r2, 1 // Generate the value for r3
+	LDI		r5, 30 // The first relative delay off. At least 1
+	LDI		r6, 1// The second relative delay off. At least 1
+	LDI		r7, 1 // The third relative delay off. At least 1
+	LDI		r8, 1 // The fourth relative delay off. At least 1
+	LDI		r11, 0 // The first relative mask off
+	LDI		r12, 0 // The second relative mask off
+	LDI		r13, 0 // The third relative mask off
+	LDI		r14, 0 // The fourth relative mask off
+
 	
 //	LED_ON	// just for signaling initiations
 //	LED_OFF	// just for signaling initiations
 
 CMDLOOP:
 	QBBC	CMDLOOP, r31, 31
-	SBCO	r4.b0, C0, 0x24, 1 // Reset host interrupt
+//	SBCO	r4.b0, C0, 0x24, 1 // Reset host interrupt done below
 CMDLOOP2:// Double verification of host sending start command
 	LBCO	r0.b0, CONST_PRUDRAM, 0, 1 // Load to r0 the content of CONST_PRUDRAM with offset 0, and 1 bytes
 	QBEQ	CMDLOOP, r0.b0, 0 // loop until we get an instruction
@@ -127,16 +144,23 @@ CMDLOOP2:// Double verification of host sending start command
 	// Start executing
 	//CLR     r30.t11	// disable the data bus. it may be necessary to disable the bus to one peripheral while another is in use to prevent conflicts or manage bandwidth.
 LOADINGRECALCS:
+	QBBC	DOUBLEBUFF, r31, 31 // There is an interrupt from host
+	SBCO	r4.b0, C0, 0x24, 1 // Reset host interrupt
 	LBCO	r2, CONST_PRUDRAM, 4, 4 // Load to r2 the content of CONST_PRUDRAM with offset 4, and 4 bytes. The PERIOD CYCLES
 	SUB		r3, r2, 1 // Generate the value for r3
 	LBCO	r5, CONST_PRUDRAM, 8, 4 // Load to r5 the content of CONST_PRUDRAM with offset 8, and 4 bytes. The first relative delay off
 	LBCO	r6, CONST_PRUDRAM, 12, 4 // Load to r6 the content of CONST_PRUDRAM with offset 12, and 4 bytes. The second relative delay off
 	LBCO	r7, CONST_PRUDRAM, 16, 4 // Load to r7 the content of CONST_PRUDRAM with offset 16, and 4 bytes. The third relative delay off
 	LBCO	r8, CONST_PRUDRAM, 20, 4 // Load to r8 the content of CONST_PRUDRAM with offset 20, and 4 bytes. The fourth relative delay off
-	LBCO	r11, CONST_PRUDRAM,24, 4 // Load to r11 the content of CONST_PRUDRAM with offset 24, and 4 bytes. The first relative mask off
+	LBCO	r11, CONST_PRUDRAM, 24, 4 // Load to r11 the content of CONST_PRUDRAM with offset 24, and 4 bytes. The first relative mask off
 	LBCO	r12, CONST_PRUDRAM, 28, 4 // Load to r12 the content of CONST_PRUDRAM with offset 28, and 4 bytes. The second relative mask off
 	LBCO	r13, CONST_PRUDRAM, 32, 4 // Load to r13 the content of CONST_PRUDRAM with offset 32, and 4 bytes. The third relative mask off
 	LBCO	r14, CONST_PRUDRAM, 36, 4 // Load to r14 the content of CONST_PRUDRAM with offset 36, and 4 bytes. The fourth relative mask off
+DOUBLEBUFF:
+	MOV		r15, r5
+	MOV		r16, r6
+	MOV		r17, r7
+	MOV		r18, r8
 ABSSYNCH:	// From this point synchronization is very important. If the previous operations takes longer than the period below to synch, in the cpp script it can be added some extra periods to compensate for frequency relative offset
 	LBCO	r0, CONST_IETREG, 0xC, 4//LBCO	r0, CONST_IETREG, 0xC, 4//LBBO	r0, r3, 0, 4//LBCO	r0.b0, CONST_IETREG, 0xC, 4. Read the IEP counter
 	AND		r0, r0, r3 //Maybe it can not be done because larger than 255. Implement module of power of 2 on the histogram period// Since the signals have a minimum period of 2 clock cycles and there are 4 combinations (Ch1, Ch2, Ch3, Ch4, NoCh) but with a long periodicity of for example 1024 we can get a value between 0 and 7
@@ -149,20 +173,20 @@ PSEUDOSYNCHLOOP:
 SIGNALON:
 	MOV		r30.b0, 0x0F // Double channels 4. write to magic r30 output byte 0
 SIGNALOFFFIRST:
-	SUB		r5, r5, 1
-	QBNE	SIGNALOFFFIRST, r5, 0
+	SUB		r15, r15, 1
+	QBNE	SIGNALOFFFIRST, r15, 0
 	MOV		r30.b0, r11 // mask first off
 SIGNALOFFSECOND:
-	SUB		r6, r6, 1
-	QBNE	SIGNALOFFSECOND, r6, 0
+	SUB		r16, r16, 1
+	QBNE	SIGNALOFFSECOND, r16, 0
 	MOV		r30.b0, r12 // mask second also off
 SIGNALOFFTHIRD:
-	SUB		r7, r7, 1
-	QBNE	SIGNALOFFTHIRD, r7, 0
+	SUB		r17, r17, 1
+	QBNE	SIGNALOFFTHIRD, r17, 0
 	MOV		r30.b0, r13 // mask third also off
 SIGNALOFFFOURTH:
-	SUB		r8, r8, 1
-	QBNE	SIGNALOFFFOURTH, r8, 0
+	SUB		r18, r18, 1
+	QBNE	SIGNALOFFFOURTH, r18, 0
 	MOV		r30.b0, r14// mask fourth off
 REPEATSYNCH:
 	JMP		LOADINGRECALCS // So that synchronization and period length is always achieved with updated values

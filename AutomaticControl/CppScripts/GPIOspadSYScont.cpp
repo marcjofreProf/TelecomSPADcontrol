@@ -128,15 +128,15 @@ GPIO::GPIO(){// Redeclaration of constructor GPIOspadSYScont when no argument is
 	
 	// Generate signals	
 	pru1dataMem_int[0]=static_cast<unsigned int>(0); // set no command
-	pru1dataMem_int[1]=static_cast<unsigned int>(200); // Initial number of clocks per cycle
-	pru1dataMem_int[2]=static_cast<unsigned int>(30); // Initial number of relative clocks/2 - 1 of the first off
-	pru1dataMem_int[3]=static_cast<unsigned int>(1); // Initial number of relative clocks/2 - 1 of the second off
-	pru1dataMem_int[4]=static_cast<unsigned int>(1); // Initial number of relative clocks/2 - 1 of the third off
-	pru1dataMem_int[5]=static_cast<unsigned int>(1); // Initial number of relative clocks/2 - 1 of the fourth off
-	pru1dataMem_int[6]=static_cast<unsigned int>(0); // Initial mask of the first off
-	pru1dataMem_int[7]=static_cast<unsigned int>(0); // Initial mask of the second also off
-	pru1dataMem_int[8]=static_cast<unsigned int>(0); // Initial mask of the third also off
-	pru1dataMem_int[9]=static_cast<unsigned int>(0); // Initial mask of the fourth also off
+	pru1dataMem_int[1]=static_cast<unsigned int>(pru1_cycles_period); // Initial number of clocks per cycle (it has to be power of 2)
+	pru1dataMem_int[2]=static_cast<unsigned int>(pru1_delay_first_off); // Initial number of relative clocks/2 - 1 of the first off. At least 1.
+	pru1dataMem_int[3]=static_cast<unsigned int>(pru1_delay_second_off); // Initial number of relative clocks/2 - 1 of the second off. At least 1.
+	pru1dataMem_int[4]=static_cast<unsigned int>(pru1_delay_third_off); // Initial number of relative clocks/2 - 1 of the third off. At least 1.
+	pru1dataMem_int[5]=static_cast<unsigned int>(pru1_delay_fourth_off); // Initial number of relative clocks/2 - 1 of the fourth off. At least 1.
+	pru1dataMem_int[6]=static_cast<unsigned int>(pru1_mask_first_off); // Initial mask of the first off
+	pru1dataMem_int[7]=static_cast<unsigned int>(pru1_mask_second_off); // Initial mask of the second also off
+	pru1dataMem_int[8]=static_cast<unsigned int>(pru1_mask_third_off); // Initial mask of the third also off
+	pru1dataMem_int[9]=static_cast<unsigned int>(pru1_mask_fourth_off); // Initial mask of the fourth also off
 	// Load and execute the PRU program on the PRU1
 	if (prussdrv_exec_program(PRU_Signal_NUM, "./CppScripts/PRUsignalWrites.bin") == -1){
 		if (prussdrv_exec_program(PRU_Signal_NUM, "./PRUsignalWrites.bin") == -1){
