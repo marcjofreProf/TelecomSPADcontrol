@@ -20,11 +20,6 @@
 #define GPIO_CLEARDATAOUToffset 0x190 //We set a GPIO low by writing to this offset. In the 32 bit value we write, if a bit is 1 the 
 // GPIO goes low. If a bit is 0 it is ignored.
 
-#define INS_PER_US			200		// 5ns per instruction for Beaglebone black
-#define INS_PER_DELAY_LOOP	2		// two instructions per delay loop
-#define NUM_REPETITIONS		1024	//Not used 4294967295	// Maximum value possible storable to limit the number of cycles in 32 bits register. This is wuite limited in number but very controllable (maybe more than one register can be used). This defines the Maximum Transmission Unit - coul dbe named Quantum MTU (defined together with the clock)
-#define PERIOD_CYCLES		16777216		// Power of 2. The longer the better because it will better match any real period
-
 // Refer to this mapping in the file - pruss_intc_mapping.h
 #define PRU0_PRU1_INTERRUPT     17
 #define PRU1_PRU0_INTERRUPT     18
@@ -59,15 +54,20 @@
 .endm
 
 // r0 is arbitrary used for operations
-// r1 is reserved with the number NUM_REPETITIONS - storing the PRU 1 DATA number of repetitions
+
 // r2 is reserved with the number of cycles of the period of operation
+// r3 is reserved with the number of cycles of the period of operation minus 1
 // r4 reserved for zeroing registers
-// r5 is reserved for producing the delay of each state
+// r5 is reserved for producing the delay of state first off
+// r6 is reserved for producing the delay of state second off
+// r7 is reserved for producing the delay of state third off
+// r8 is reserved for producing the delay of state fourth off
 
 // r10 is arbitrary used for operations
-
-// r14 is reserved for ON state time
-// r15 is reserved for OFF state time
+// r11 is reserved for first off mask
+// r12 is reserved for second also off mask
+// r13 is reserved for third also off mask
+// r14 is reserved for fourth also off mask
 
 // r28 is mainly used for LED indicators operations
 // r29 is mainly used for LED indicators operations
@@ -111,11 +111,7 @@ INITIATIONS:
 	// Initializations - some, just in case
 	LDI	r30, 0 // All signal pins down
 	LDI	r4, 0 // zeroing
-	MOV	r1, NUM_REPETITIONS// Initial initialization jus tin case// Cannot be done with LDI instruction because it may be a value larger than 65535. load r3 with the number of cycles. For the time being only up to 65535 ->develop so that it can be higher
-	MOV r2, PERIOD_CYCLES
 	LDI	r0, 0 // Ensure reset commands
-	LDI	r14, 20 // ON state
-	LDI	r15, 60 // OFF state
 	
 //	LED_ON	// just for signaling initiations
 //	LED_OFF	// just for signaling initiations
@@ -124,16 +120,26 @@ CMDLOOP:
 	QBBC	CMDLOOP, r31, 31
 	SBCO	r4.b0, C0, 0x24, 1 // Reset host interrupt
 CMDLOOP2:// Double verification of host sending start command
-	LBCO	r0.b0, CONST_PRUDRAM, 0, 1 // Load to r0 the content of CONST_PRUDRAM with offset 4, and 1 bytes
+	LBCO	r0.b0, CONST_PRUDRAM, 0, 1 // Load to r0 the content of CONST_PRUDRAM with offset 0, and 1 bytes
 	QBEQ	CMDLOOP, r0.b0, 0 // loop until we get an instruction
 	SBCO	r4.b0, CONST_PRUDRAM, 0, 1 // We remove the command from the host (in case there is a reset from host, we are saved) 1 bytes.
 	//MOV 	r31.b0, PRU1_ARM_INTERRUPT+16// Here send interrupt to host to measure time
 	// Start executing
 	//CLR     r30.t11	// disable the data bus. it may be necessary to disable the bus to one peripheral while another is in use to prevent conflicts or manage bandwidth.
+LOADINGRECALCS:
+	LBCO	r2, CONST_PRUDRAM, 4, 4 // Load to r2 the content of CONST_PRUDRAM with offset 4, and 4 bytes. The PERIOD CYCLES
+	SUB		r3, r2, 1 // Generate the value for r3
+	LBCO	r5, CONST_PRUDRAM, 8, 4 // Load to r5 the content of CONST_PRUDRAM with offset 8, and 4 bytes. The first relative delay off
+	LBCO	r6, CONST_PRUDRAM, 12, 4 // Load to r6 the content of CONST_PRUDRAM with offset 12, and 4 bytes. The second relative delay off
+	LBCO	r7, CONST_PRUDRAM, 16, 4 // Load to r7 the content of CONST_PRUDRAM with offset 16, and 4 bytes. The third relative delay off
+	LBCO	r8, CONST_PRUDRAM, 20, 4 // Load to r8 the content of CONST_PRUDRAM with offset 20, and 4 bytes. The fourth relative delay off
+	LBCO	r11, CONST_PRUDRAM,24, 4 // Load to r11 the content of CONST_PRUDRAM with offset 24, and 4 bytes. The first relative mask off
+	LBCO	r12, CONST_PRUDRAM, 28, 4 // Load to r12 the content of CONST_PRUDRAM with offset 28, and 4 bytes. The second relative mask off
+	LBCO	r13, CONST_PRUDRAM, 32, 4 // Load to r13 the content of CONST_PRUDRAM with offset 32, and 4 bytes. The third relative mask off
+	LBCO	r14, CONST_PRUDRAM, 36, 4 // Load to r14 the content of CONST_PRUDRAM with offset 36, and 4 bytes. The fourth relative mask off
 ABSSYNCH:	// From this point synchronization is very important. If the previous operations takes longer than the period below to synch, in the cpp script it can be added some extra periods to compensate for frequency relative offset
-	SUB		r10, r2, 1 // Generate the value for r10
 	LBCO	r0, CONST_IETREG, 0xC, 4//LBCO	r0, CONST_IETREG, 0xC, 4//LBBO	r0, r3, 0, 4//LBCO	r0.b0, CONST_IETREG, 0xC, 4. Read the IEP counter
-	AND		r0, r0, r10 //Maybe it can not be done because larger than 255. Implement module of power of 2 on the histogram period// Since the signals have a minimum period of 2 clock cycles and there are 4 combinations (Ch1, Ch2, Ch3, Ch4, NoCh) but with a long periodicity of for example 1024 we can get a value between 0 and 7
+	AND		r0, r0, r3 //Maybe it can not be done because larger than 255. Implement module of power of 2 on the histogram period// Since the signals have a minimum period of 2 clock cycles and there are 4 combinations (Ch1, Ch2, Ch3, Ch4, NoCh) but with a long periodicity of for example 1024 we can get a value between 0 and 7
 	SUB		r0, r2, r0 // Substract to find how long to wait	
 	LSR		r0, r0, 1// Divide by two because the PSEUDOSYNCHLOOP consumes double
 	ADD		r0, r0, 1// ADD 1 to not have a substraction below zero which halts
@@ -142,27 +148,25 @@ PSEUDOSYNCHLOOP:
 	QBNE	PSEUDOSYNCHLOOP, r0, 0 // Coincides with a 0
 SIGNALON:
 	MOV		r30.b0, 0x0F // Double channels 4. write to magic r30 output byte 0
-	MOV		r5, r14
-	LDI		r4, 0 // Intentionally controlled delay to adjust all sequences (in particular to the last one)
-	LDI		r4, 0 // Intentionally controlled delay to adjust all sequences (in particular to the last one)
-//	MOV		r30.w0, 0x0000 // All off
-SIGNALONDEL:
+SIGNALOFFFIRST:
 	SUB		r5, r5, 1
-	QBNE	SIGNALONDEL, r5, 0
-//	LDI		r4, 0 // Controlled intentional delay to account for the fact that QBNE takes one extra count when it does not go through the barrier
-SIGNALOFF:
-	MOV		r30.b0, 0x00 // All off
-	MOV		r5, r15 // No extra controlled delay since two instructions below as well in FINISH and one here
-//	LDI		r4, 0 // Intentionally controlled delay to adjust all sequences (in particular to the last one)
-SIGNALOFFDEL:
-	SUB		r5, r5, 1
-	QBNE	SIGNALOFFDEL, r5, 0
-//	LDI		r4, 0 // Controlled intentional delay to adjust
+	QBNE	SIGNALOFFFIRST, r5, 0
+	MOV		r30.b0, r11 // mask first off
+SIGNALOFFSECOND:
+	SUB		r6, r6, 1
+	QBNE	SIGNALOFFSECOND, r6, 0
+	MOV		r30.b0, r12 // mask second also off
+SIGNALOFFTHIRD:
+	SUB		r7, r7, 1
+	QBNE	SIGNALOFFTHIRD, r7, 0
+	MOV		r30.b0, r13 // mask third also off
+SIGNALOFFFOURTH:
+	SUB		r8, r8, 1
+	QBNE	SIGNALOFFFOURTH, r8, 0
+	MOV		r30.b0, r14// mask fourth off
+REPEATSYNCH:
+	JMP		LOADINGRECALCS // So that synchronization and period length is always achieved with updated values
 FINISH:
-	MOV		r1, NUM_REPETITIONS //SUB		r1, r1, 1 // Decrement counter
-	QBNE	SIGNALON, r1, 0 // condition jump to SIGNALON because we have not finished the number of repetitions
-//	LDI		r4, 0 // Controlled intentional delay to account for the fact that QBNE takes one extra count when it does not go through the barrier
-FINISHLOOP:
 	// The following lines do not consume "signal speed"
 	SET     r30.t11	// enable the data bus. it may be necessary to disable the bus to one peripheral while another is in use to prevent conflicts or manage bandwidth.
 	MOV 	r31.b0, PRU1_ARM_INTERRUPT+16// Notification sent at the beginning of the signal//SBCO	r5.b0, CONST_PRUDRAM, 4, 1 // Put contents of r0 into CONST_PRUDRAM// code 1 means that we have finished.This can be substituted by an interrupt: MOV 	r31.b0, PRU1_ARM_INTERRUPT+16
