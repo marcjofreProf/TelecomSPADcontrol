@@ -206,7 +206,7 @@ echo "Press:"
 echo "  Ctrl+C to terminate"
 echo "  Any key to pause/resume"
 
-sudo nice -n $NicenestPriorValue ./CppScripts/GPIOspadSYScont 55.0 # &
+sudo nice -n $NicenestPriorValue ./CppScripts/GPIOspadSYScont 52.5 # &
 
 : << 'COMMENT'
 APP_PID=$!
