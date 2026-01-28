@@ -419,28 +419,30 @@ int GPIO::calculateSPADControl(){
    	}
     
     // Voltage PID calculation
-    double P_voltage = Kp_voltage * voltage_error;
-    
-    voltage_integral += voltage_error * DT;
-    if(voltage_integral > voltage_integral_limit) voltage_integral = voltage_integral_limit;
-    if(voltage_integral < -voltage_integral_limit) voltage_integral = -voltage_integral_limit;
-    double I_voltage = Ki_voltage * voltage_integral;
-    
-    double D_voltage = Kd_voltage * (voltage_error - voltage_prev_error) / DT;
-    voltage_prev_error = voltage_error;
-    
-    double voltage_adj = P_voltage + I_voltage + D_voltage;
-    
-    // Limit voltage step
-    if(voltage_adj > MAX_V_STEP) voltage_adj = MAX_V_STEP;
-    if(voltage_adj < -MAX_V_STEP) voltage_adj = -MAX_V_STEP;
-    
-    // Update voltage
-    current_desired_voltage += voltage_adj;
-    
-    // Clamp voltage
-    if(current_desired_voltage < MIN_VOLTAGE) current_desired_voltage = MIN_VOLTAGE;
-    if(current_desired_voltage > MAX_VOLTAGE) current_desired_voltage = MAX_VOLTAGE;
+    if (abs(voltage_error)>0.1){// Only change PID value if the error is larger than 10%
+	    double P_voltage = Kp_voltage * voltage_error;
+	    
+	    voltage_integral += voltage_error * DT;
+	    if(voltage_integral > voltage_integral_limit) voltage_integral = voltage_integral_limit;
+	    if(voltage_integral < -voltage_integral_limit) voltage_integral = -voltage_integral_limit;
+	    double I_voltage = Ki_voltage * voltage_integral;
+	    
+	    double D_voltage = Kd_voltage * (voltage_error - voltage_prev_error) / DT;
+	    voltage_prev_error = voltage_error;
+	    
+	    double voltage_adj = P_voltage + I_voltage + D_voltage;
+	    
+	    // Limit voltage step
+	    if(voltage_adj > MAX_V_STEP) voltage_adj = MAX_V_STEP;
+	    if(voltage_adj < -MAX_V_STEP) voltage_adj = -MAX_V_STEP;
+	    
+	    // Update voltage
+	    current_desired_voltage += voltage_adj;
+	    
+	    // Clamp voltage
+	    if(current_desired_voltage < MIN_VOLTAGE) current_desired_voltage = MIN_VOLTAGE;
+	    if(current_desired_voltage > MAX_VOLTAGE) current_desired_voltage = MAX_VOLTAGE;
+	}
     
     // Update duty cycles for each channel
     for(int i = 0; i < NumDetChannels; i++) {
@@ -461,6 +463,10 @@ int GPIO::calculateSPADControl(){
                 duty_prev_errors[i] = deviation;
                 
                 double duty_adj = P_duty + I_duty + D_duty;
+
+                // Limit duty cycle step
+			    if(duty_adj > MAX_DC_STEP) duty_adj = MAX_DC_STEP;
+			    if(duty_adj < -MAX_DC_STEP) duty_adj = -MAX_DC_STEP;
                 
                 // Adjust duty cycle: increase if channel is below/above average
                 duty_cycles[i] += duty_adj;
@@ -473,7 +479,12 @@ int GPIO::calculateSPADControl(){
             	// Channels are balanced - gradually move toward MID_DUTY
 	            // Add restoring force toward midpoint
 	            double midpoint_error = (AVG_DUTY - duty_cycles[i]) / AVG_DUTY;
-	            double midpoint_adj = 0.1 * midpoint_error;  // Slow convergence	            
+	            double midpoint_adj = 0.1 * midpoint_error;  // Slow convergence
+
+	            // Limit duty cycle step
+			    if(midpoint_adj > MAX_DC_STEP) midpoint_adj = MAX_DC_STEP;
+			    if(midpoint_adj < -MAX_DC_STEP) midpoint_adj = -MAX_DC_STEP;
+			                
 	            duty_cycles[i] += midpoint_adj;
 
                 // Reset PID for this channel if balanced

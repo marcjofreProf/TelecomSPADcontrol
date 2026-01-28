@@ -7,9 +7,9 @@
 
 #include "PRUassReadsScript.hp"
 
-#define LASTSHAREDRAM 11996 //12000-4 // Address of the last position of the shared RAM
+//#define LASTSHAREDRAM 11996 //12000-4 // Address of the last position of the shared RAM
 // Length of acquisition:
-#define EXITCOUNTER 0xFFFFFFFF // maximum number of caiunts of all combined counter registers
+#define EXITCOUNTER 0x0FFFFFFFF // maximum number of caiunts of all combined counter registers
 
 // *** LED routines, so that LED USR0 can be used for some simple debugging
 // *** Affects: r28, r29. Each PRU has its of 32 registers
@@ -148,7 +148,8 @@ RESETCOUNTS: // Reset counters
 	LDI		r5, 0
 	LDI		r6, 0
 	LDI		r9, 0 // make sure to reset this value
-	MOV 	r20, EXITCOUNTER // Maximum value to start with to exit 
+//	MOV 	r20, EXITCOUNTER // Maximum value to start with to exit 
+	LBCO	r20, CONST_PRUDRAM, 4, 4 // Load the number of clock cycles to exit so approximately the measurement time)
 DWTSTART:
 	// Re-start DWT_CYCNT
 	LBBO	r2, r12, 0, 1 // r2 maps b0 control register
