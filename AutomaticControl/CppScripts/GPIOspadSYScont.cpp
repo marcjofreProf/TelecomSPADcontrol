@@ -410,7 +410,7 @@ int GPIO::calculateSPADControl(){
     double voltage_error=0; // Initialization
     if (numChactive>0){
 	    avg_cps = total_cps / numChactive;
-	    voltage_error = (TARGET_CPS - avg_cps) / (TARGET_CPS);
+	    voltage_error = (TARGET_CPS - avg_cps) / (avg_cps);
    	}
    	else{
    		voltage_error = 1.0; // 100% error - we want MORE voltage to get counts
