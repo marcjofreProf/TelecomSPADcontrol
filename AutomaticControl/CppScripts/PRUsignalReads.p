@@ -148,8 +148,8 @@ RESETCOUNTS: // Reset counters
 	LDI		r5, 0
 	LDI		r6, 0
 	LDI		r9, 0 // make sure to reset this value
-	MOV 	r20, EXITCOUNTER // Maximum value to start with to exit 
-//	LBCO	r20, CONST_PRUDRAM, 4, 4 // Load the number of clock cycles to exit so approximately the measurement time)
+//	MOV 	r20, EXITCOUNTER // Maximum value to start with to exit 
+	LBCO	r20, CONST_PRUDRAM, 4, 4 // Load the number of clock cycles to exit so approximately the measurement time)
 DWTSTART:
 	// Re-start DWT_CYCNT
 	LBBO	r2, r12, 0, 1 // r2 maps b0 control register
