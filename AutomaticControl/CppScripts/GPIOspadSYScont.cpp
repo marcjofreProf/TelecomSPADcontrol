@@ -117,7 +117,7 @@ GPIO::GPIO(){// Redeclaration of constructor GPIOspadSYScont when no argument is
 	// Execute program
 	// Load and execute the PRU program on the PRU0	
 	pru0dataMem_int[0]=static_cast<unsigned int>(0); // set no command
-	pru0dataMem_int[1]=static_cast<unsigned int>(PRUmeasInterval/PRUclockStepPeriodNanoseconds); // Measurement time interval in clock cycles
+	pru0dataMem_int[1]=static_cast<unsigned int>(0x0FFFFFF);//PRUmeasInterval/PRUclockStepPeriodNanoseconds); // Measurement time interval in clock cycles
 	
 	if (prussdrv_exec_program(PRU_Operation_NUM, "./CppScripts/PRUsignalReads.bin") == -1){
 		if (prussdrv_exec_program(PRU_Operation_NUM, "./PRUsignalReads.bin") == -1){
@@ -484,7 +484,7 @@ int GPIO::calculateSPADControl(){
 	            // Limit duty cycle step
 			    if(midpoint_adj > MAX_DC_STEP) midpoint_adj = MAX_DC_STEP;
 			    if(midpoint_adj < -MAX_DC_STEP) midpoint_adj = -MAX_DC_STEP;
-			    
+
 	            duty_cycles[i] += midpoint_adj;
 
                 // Reset PID for this channel if balanced
