@@ -420,7 +420,7 @@ int GPIO::calculateSPADControl(){
    	}
     
     // Voltage PID calculation
-    if (abs(voltage_error)>0.5){// Only change PID value if the error is larger than 50%
+    if (abs(voltage_error)>0.15){// Only change PID value if the error is larger than 15%
 	    double P_voltage = Kp_voltage * voltage_error;
 	    
 	    voltage_integral += voltage_error * DT;
