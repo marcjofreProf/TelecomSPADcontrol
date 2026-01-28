@@ -484,7 +484,7 @@ int GPIO::calculateSPADControl(){
 	            // Limit duty cycle step
 			    if(midpoint_adj > MAX_DC_STEP) midpoint_adj = MAX_DC_STEP;
 			    if(midpoint_adj < -MAX_DC_STEP) midpoint_adj = -MAX_DC_STEP;
-			                
+			    
 	            duty_cycles[i] += midpoint_adj;
 
                 // Reset PID for this channel if balanced
