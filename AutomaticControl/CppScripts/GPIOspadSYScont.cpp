@@ -117,8 +117,9 @@ GPIO::GPIO(){// Redeclaration of constructor GPIOspadSYScont when no argument is
 	// Execute program
 	// Load and execute the PRU program on the PRU0	
 	pru0dataMem_int[0]=static_cast<unsigned int>(0); // set no command
-	pru0dataMem_int[1]=static_cast<unsigned int>(0x0FFFFFF);//PRUmeasInterval/PRUclockStepPeriodNanoseconds); // Measurement time interval in clock cycles
-	
+	pru0dataMem_int[1]=static_cast<unsigned int>(PRUmeasInterval/PRUclockStepPeriodNanoseconds); // Measurement time interval in clock cycles. Very important to be a power of 2.
+	cout << "pru0dataMem_int[1]: " << pru0dataMem_int[1] << endl;
+
 	if (prussdrv_exec_program(PRU_Operation_NUM, "./CppScripts/PRUsignalReads.bin") == -1){
 		if (prussdrv_exec_program(PRU_Operation_NUM, "./PRUsignalReads.bin") == -1){
 			perror("prussdrv_exec_program non successfull writing of PRUsignalReads.bin");
@@ -419,7 +420,7 @@ int GPIO::calculateSPADControl(){
    	}
     
     // Voltage PID calculation
-    if (abs(voltage_error)>0.1){// Only change PID value if the error is larger than 10%
+    if (abs(voltage_error)>0.5){// Only change PID value if the error is larger than 50%
 	    double P_voltage = Kp_voltage * voltage_error;
 	    
 	    voltage_integral += voltage_error * DT;
