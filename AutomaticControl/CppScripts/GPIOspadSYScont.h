@@ -125,7 +125,7 @@ private:// Variables
 	unsigned int DetCounterCh[NumDetChannels]; // Holder of the detections per channel
 	// SPAD control
 	// PID gains - tune these experimentally
-    const double Kp_voltage = 0.15; // It has to be larger than the minimum SPI voltage step MIN_SPI_V_STEP
+    const double Kp_voltage = 0.25; // It has to be larger than the minimum SPI voltage step MIN_SPI_V_STEP
     const double Ki_voltage = 0.05; // Times voltage_integral_limit it has to be larger than the minimum SPI voltage step MIN_SPI_V_STEP
     const double Kd_voltage = 0.02; // When divided by DT it has to be larger than the minimum SPI voltage step MIN_SPI_V_STEP
     
@@ -134,8 +134,8 @@ private:// Variables
     const double Kd_duty = 0.05;
     
     // Limits    
-    const double MIN_VOLTAGE = 50.0;
-    const double MAX_VOLTAGE = 65.0;
+    const double MIN_VOLTAGE = 45.0;
+    const double MAX_VOLTAGE = 58.0;
     const double AVG_DUTY = 0.3; // Limits to the values of duty cycle
     const double MIN_DUTY = 0.2; // Limits to the values of duty cycle
     const double MAX_DUTY = 0.4; // Limits to the values of duty cycle

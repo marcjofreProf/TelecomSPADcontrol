@@ -406,7 +406,7 @@ int GPIO::calculateSPADControl(){
     }
     
     // Calculate average and voltage error
-    double avg_cps =0; // Initialization
+    double avg_cps=0; // Initialization
     double voltage_error=0; // Initialization
     if (numChactive>0){
 	    avg_cps = total_cps / numChactive;
