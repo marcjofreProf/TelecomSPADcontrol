@@ -134,7 +134,7 @@ private:// Variables
     // Limits
     const double TARGET_CPS = 5000.0;  // Target counts per second (background level) for each individual detection channel
     const double MIN_VOLTAGE = 50.0;
-    const double MAX_VOLTAGE = 58.0;
+    const double MAX_VOLTAGE = 65.0;
     const double AVG_DUTY = 0.3; // Limits to the values of duty cycle
     const double MIN_DUTY = 0.2; // Limits to the values of duty cycle
     const double MAX_DUTY = 0.4; // Limits to the values of duty cycle
