@@ -1055,6 +1055,16 @@ int main(int argc, char const * argv[]){
 	tcsetattr(STDIN_FILENO, TCSANOW, &newt);
 
 	char KeyboardC;
+
+	GPIO GPIOagent; // Initiate the instance
+	 
+	 GPIOagent.m_start(); // Initiate in start state.
+	 
+	 /// Errors/actions handling
+	 signal(SIGINT, SignalINTHandler);// Interruption signal
+	 signal(SIGTERM, SignalTERMHandler); // kill, systemd stop
+	 //signal(SIGPIPE, SignalPIPEHandler);// Error trying to write/read to a socket
+	 //signal(SIGSEGV, SignalSegmentationFaultHandler);// Segmentation fault
  
 	 float initialDesiredDCvoltage=55.0;
 	 if ( argc == 1 ) {
@@ -1066,19 +1076,12 @@ int main(int argc, char const * argv[]){
 		 //	printf( "  %d. %s\n", i, argv[i] );
 		 //}
 	 	initialDesiredDCvoltage=stof(argv[1]);
+	 	GPIOagent.TARGET_CPS=stod(argv[2]);
 	 }
 	 
 	 cout << "GPIOspadSYScont started..." << endl;
 	 
-	 GPIO GPIOagent; // Initiate the instance
 	 
-	 GPIOagent.m_start(); // Initiate in start state.
-	 
-	 /// Errors/actions handling
-	 signal(SIGINT, SignalINTHandler);// Interruption signal
-	 signal(SIGTERM, SignalTERMHandler); // kill, systemd stop
-	 //signal(SIGPIPE, SignalPIPEHandler);// Error trying to write/read to a socket
-	 //signal(SIGSEGV, SignalSegmentationFaultHandler);// Segmentation fault
 	 
 	 bool isValidWhileLoop=true;
 	 if (GPIOagent.getState()==GPIO::APPLICATION_EXIT){isValidWhileLoop = false;}

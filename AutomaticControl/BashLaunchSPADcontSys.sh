@@ -205,8 +205,9 @@ sudo config-pin p9_31 spi_sclk
 echo "Press:"
 echo "  Ctrl+C to terminate"
 echo "  Any key to pause/resume"
-
-sudo nice -n $NicenestPriorValue ./CppScripts/GPIOspadSYScont 52.5 # &
+# The first parameter passed is the initial DC bias voltage for the ramp up
+# The second paramter passed is the average target count rate (of all active channels)
+sudo nice -n $NicenestPriorValue ./CppScripts/GPIOspadSYScont 52.5 5000.0 # &
 
 : << 'COMMENT'
 APP_PID=$!

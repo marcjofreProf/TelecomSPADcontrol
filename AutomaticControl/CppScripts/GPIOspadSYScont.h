@@ -55,6 +55,8 @@ public: //Variables
 	    };
 	// SPI communications
 	int spi_fd; // SPI file descriptor
+	// SPAD parameters - PID
+	double TARGET_CPS = 5000.0;  // Target counts per second (background level) for each individual detection channel
 
 private:// Variables
 	ApplicationState m_state;
@@ -131,8 +133,7 @@ private:// Variables
     const double Ki_duty = 0.1;
     const double Kd_duty = 0.05;
     
-    // Limits
-    const double TARGET_CPS = 5000.0;  // Target counts per second (background level) for each individual detection channel
+    // Limits    
     const double MIN_VOLTAGE = 50.0;
     const double MAX_VOLTAGE = 65.0;
     const double AVG_DUTY = 0.3; // Limits to the values of duty cycle
