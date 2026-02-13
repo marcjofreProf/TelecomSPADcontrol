@@ -135,7 +135,7 @@ private:// Variables
     
     // Limits    
     const double MIN_VOLTAGE = 45.0;
-    const double MAX_VOLTAGE = 58.0;
+    const double MAX_VOLTAGE = 60.0;
     const double AVG_DUTY = 0.3; // Limits to the values of duty cycle
     const double MIN_DUTY = 0.2; // Limits to the values of duty cycle
     const double MAX_DUTY = 0.4; // Limits to the values of duty cycle
