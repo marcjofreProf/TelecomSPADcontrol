@@ -141,8 +141,8 @@ private:// Variables
     const double AVG_DUTY = 0.3; // Limits to the values of duty cycle
     const double MIN_DUTY = 0.2; // Limits to the values of duty cycle
     const double MAX_DUTY = 0.4; // Limits to the values of duty cycle
-    const double MAX_V_STEP = 1.5; // At least it has to be larger than 0.2V
-    const double MAX_DC_STEP = 0.15; // At least it has to be larger than 0.05
+    const double MAX_V_STEP = 0.5; // At least it has to be larger than 0.2V
+    const double MAX_DC_STEP = 0.15; // At least it has to be larger than 0.05. Duty cycle step
     const double DT = PRUmeasInterval/1000000000.0;  // Time Interval of counts measurment
 
     double duty_cycles[NumDetChannels];  // Current duty cycles, will be updated
