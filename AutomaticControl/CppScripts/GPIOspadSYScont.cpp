@@ -298,7 +298,7 @@ int GPIO::SPIrampVoltage(int spi_fdAux, float desired_voltage, float max_rate, b
     if (max_rate <= 0) return -2;
     
     // Check if already at target (within 0.2V tolerance)
-    if (fabs(currentVoltageValue - desired_voltage) < MIN_SPI_V_STEP) {
+    if (fabs(currentVoltageValue - desired_voltage) < MIN_SPI_V_STEP && (abs(voltage_error)<=voltage_error_thresholdPercent)) {
         //currentVoltageValue = desired_voltage; // Dangerous because it could actually not be upated
         if (verbose) cout << "At target: " << fixed << setprecision(2) << currentVoltageValue << "V" << endl;
         return 0;
@@ -406,8 +406,7 @@ int GPIO::calculateSPADControl(){
     }
     
     // Calculate average and voltage error
-    double avg_cps=0; // Initialization
-    double voltage_error=0; // Initialization
+    double avg_cps=0; // Initialization    
     if (numChactive>0){
 	    avg_cps = total_cps / numChactive;
 	    voltage_error = (TARGET_CPS - avg_cps) / (TARGET_CPS);
@@ -420,7 +419,7 @@ int GPIO::calculateSPADControl(){
    	}
     
     // Voltage PID calculation
-    if (abs(voltage_error)>0.10 || total_cps==0.0){// Only change PID value if the error is larger than 20% or if no average counts
+    if (abs(voltage_error)>voltage_error_thresholdPercent || total_cps==0.0){// Only change PID value if the error is larger than 10% or if no average counts
 	    double P_voltage = Kp_voltage * voltage_error;
 	    
 	    voltage_integral += voltage_error * DT;
