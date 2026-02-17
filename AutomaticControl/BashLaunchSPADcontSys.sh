@@ -207,7 +207,7 @@ echo "  Ctrl+C to terminate"
 echo "  Any key to pause/resume"
 # The first parameter passed is the initial DC bias voltage for the ramp up
 # The second paramter passed is the average target count rate (of all active channels)
-sudo nice -n $NicenestPriorValue ./CppScripts/GPIOspadSYScont 52.5 1000.0 # &
+sudo nice -n $NicenestPriorValue ./CppScripts/GPIOspadSYScont 52.5 500.0 # &
 
 : << 'COMMENT'
 APP_PID=$!
