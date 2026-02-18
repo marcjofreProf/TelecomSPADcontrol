@@ -755,6 +755,7 @@ int GPIO::HandleInterruptPRUsActive(){ // Uses output pins to clock subsystems p
 int GPIO::HandleInterruptPRUsPaused(){ // Uses output pins to clock subsystems physically generating qubits or entangled qubits
 	ReadTimeCounts(); // Read the counters of detections
 	
+	cout << "\033[2J\033[1;1H"; // Clear the terminal screen and move the cursor to the top row
 	OperDataDebShow();
 
 	return 0;// All ok
