@@ -301,6 +301,8 @@ int GPIO::SPIrampVoltage(int spi_fdAux, float desired_voltage, float max_rate, b
     if (fabs(currentVoltageValue - desired_voltage) < MIN_SPI_V_STEP && (abs(voltage_error)<=voltage_error_thresholdPercent)) {
         //currentVoltageValue = desired_voltage; // Dangerous because it could actually not be upated
         if (verbose) cout << "At target: " << fixed << setprecision(2) << currentVoltageValue << "V" << endl;
+        this->m_pause();
+	    cout << "System paused. Press any key to resume..." << endl;
         return 0;
     }
     
