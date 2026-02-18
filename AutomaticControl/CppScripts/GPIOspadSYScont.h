@@ -126,6 +126,12 @@ private:// Variables
 	// SPAD control
 	double voltage_error=0; // Initialization
 	double voltage_error_thresholdPercent=0.4; // Equivalent to a per one 
+
+	// Non-linear SPAD transfer function control
+	double last_avg_cps = 0;
+    double last_voltage = 0;
+    bool past_inflection_point = false;
+
 	// PID gains - tune these experimentally
     const double Kp_voltage = 0.150; // It has to be larger than the minimum SPI voltage step MIN_SPI_V_STEP
     const double Ki_voltage = 0.010; // Times voltage_integral_limit it has to be larger than the minimum SPI voltage step MIN_SPI_V_STEP

@@ -395,6 +395,8 @@ int GPIO::NonBusyTimeWall(){
 	return 0;
 }
 
+// Old SPAd system pid function not accounting for nonlinear response (above the inflection point, increasing the voltage porduces less counts)
+/*
 int GPIO::calculateSPADControl(){
 	current_desired_voltage=currentVoltageValue; // Update value
 	// Calculate counts per second for each channel
@@ -501,7 +503,83 @@ int GPIO::calculateSPADControl(){
 
 	return 0;
 }
-
+*/
+// PID function accounting for non-linear response of the SPADs (at some point the more voltage the less counts, because we have passed the inflection point)
+int GPIO::calculateSPADControl(){
+    current_desired_voltage=currentVoltageValue; // Update value
+    // Calculate counts per second for each channel
+    double total_cps = 0.0;
+    double numChactive=0.0;
+    for(int i = 0; i < NumDetChannels; i++) {
+        if (DetCounterCh[i]>0){
+            total_cps += ((double)DetCounterCh[i]) / ((double)DT);
+            numChactive++;
+        }
+    }
+    
+    // Calculate average and voltage error
+    double avg_cps=0; // Initialization    
+    if (numChactive>0){
+        avg_cps = total_cps / numChactive;
+        voltage_error = (TARGET_CPS - avg_cps) / (TARGET_CPS);
+        
+        // NEW: Check if we're past the inflection point (voltage increase significantly decreased counts)
+        if (current_desired_voltage > last_voltage && avg_cps < last_avg_cps * 0.8) {
+            past_inflection_point = true;
+        } else if (avg_cps > last_avg_cps * 1.2) {
+            // Reset flag if we're clearly on rising edge again
+            past_inflection_point = false;
+        }
+        
+        // Store for next iteration
+        last_avg_cps = avg_cps;
+        last_voltage = current_desired_voltage;
+    }
+    else{
+        voltage_error = 1.0; // 100% error - we want MORE voltage to get counts
+        avg_cps = 0; // Average value
+        voltage_prev_error = 0.0; // It has to be reset to zero if no counts for the algorithm to advance
+        voltage_integral = 0.0; // It has to be reset to zero if no counts for the algorithm to advance
+        past_inflection_point = false; // Reset flag when no counts
+    }
+    
+    // Voltage PID calculation
+    if (abs(voltage_error)>voltage_error_thresholdPercent || total_cps==0.0){// Only change PID value if the error is larger than 10% or if no average counts
+        double P_voltage = Kp_voltage * voltage_error;
+        
+        voltage_integral += voltage_error * DT;
+        if(voltage_integral > voltage_integral_limit) voltage_integral = voltage_integral_limit;
+        if(voltage_integral < -voltage_integral_limit) voltage_integral = -voltage_integral_limit;
+        double I_voltage = Ki_voltage * voltage_integral;
+        
+        double D_voltage = Kd_voltage * (voltage_error - voltage_prev_error) / DT;
+        voltage_prev_error = voltage_error;
+        
+        double voltage_adj = P_voltage + I_voltage + D_voltage;
+        
+        // NEW: Force voltage reduction if past inflection point
+        if (past_inflection_point) {
+            voltage_adj = -MAX_V_STEP; // Force maximum reduction
+            // Reset integral to prevent windup
+            voltage_integral = 0;
+        }
+        
+        // Limit voltage step
+        if(voltage_adj > MAX_V_STEP) voltage_adj = MAX_V_STEP;
+        if(voltage_adj < -MAX_V_STEP) voltage_adj = -MAX_V_STEP;
+        
+        // Update voltage
+        current_desired_voltage += voltage_adj;
+        
+        // Clamp voltage
+        if(current_desired_voltage < MIN_VOLTAGE) current_desired_voltage = MIN_VOLTAGE;
+        if(current_desired_voltage > MAX_VOLTAGE) current_desired_voltage = MAX_VOLTAGE;
+    }
+    
+    // ... rest of your duty cycle code remains exactly the same ...
+    
+    return 0;
+}
 int GPIO::updatePRU1values(){
 	// Calculate when each channel turns OFF (in cycles from start)
     unsigned int off_time[NumDetChannels];
