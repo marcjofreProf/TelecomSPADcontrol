@@ -302,7 +302,7 @@ int GPIO::SPIrampVoltage(int spi_fdAux, float desired_voltage, float max_rate, b
         //currentVoltageValue = desired_voltage; // Dangerous because it could actually not be upated
         if (verbose) cout << "At target: " << fixed << setprecision(2) << currentVoltageValue << "V" << endl;
         this->m_pause();
-	    cout << "System paused. Press any key to resume..." << endl;
+	    //cout << "System paused. Press any key to resume..." << endl;
         return 0;
     }
     
@@ -714,12 +714,7 @@ int GPIO::updatePRU1values(){
 	return 0;
 }
 
-int GPIO::HandleInterruptPRUs(){ // Uses output pins to clock subsystems physically generating qubits or entangled qubits
-	ReadTimeCounts(); // Read the counters of detections
-	calculateSPADControl(); // Calculate the adjustmenst to do
-	updatePRU1values();// Send to signal PRU duty cycle adjustments.
-	SPIrampVoltage(spi_fd, current_desired_voltage, 2.0, true); // Apply DC bias adjustments // Verbose should be turn to false one debugging is complete
-
+int GPIO::OperDataDebShow(){ // Show operationaldata
 	// Debugging
 	std::cout << std::dec; // Force decimal format
 	cout << "DDRdumpdata DetCounterCh[0]: " << DetCounterCh[0] << endl;
@@ -742,6 +737,25 @@ int GPIO::HandleInterruptPRUs(){ // Uses output pins to clock subsystems physica
     std::cout << "pru1_mask_third_off: 0x" << std::hex << pru1_mask_third_off << std::endl;
     std::cout << "pru1_mask_fourth_off: 0x" << std::hex << pru1_mask_fourth_off << std::endl;
     std::cout << std::dec; // Force decimal format again
+
+	return 0;// All ok
+}
+
+int GPIO::HandleInterruptPRUsActive(){ // Uses output pins to clock subsystems physically generating qubits or entangled qubits
+	ReadTimeCounts(); // Read the counters of detections
+	calculateSPADControl(); // Calculate the adjustmenst to do
+	updatePRU1values();// Send to signal PRU duty cycle adjustments.
+	SPIrampVoltage(spi_fd, current_desired_voltage, 2.0, true); // Apply DC bias adjustments // Verbose should be turn to false one debugging is complete
+
+	OperDataDebShow();
+
+	return 0;// All ok
+}
+
+int GPIO::HandleInterruptPRUsPaused(){ // Uses output pins to clock subsystems physically generating qubits or entangled qubits
+	ReadTimeCounts(); // Read the counters of detections
+	
+	OperDataDebShow();
 
 	return 0;// All ok
 }
@@ -1199,11 +1213,12 @@ int main(int argc, char const * argv[]){
 	       switch(GPIOagent.getState()) {
 	           case GPIO::APPLICATION_RUNNING: {               
 	               // Do Some Work
-	               GPIOagent.HandleInterruptPRUs();
+	               GPIOagent.HandleInterruptPRUsActive();
 	               break;
 	           }
 	           case GPIO::APPLICATION_PAUSED: { // When no corrections are aimed (maybe because they are true signal detections periods)
 	               // Maybe do some checks if necessary 
+	           		GPIOagent.HandleInterruptPRUsPaused();
 	               break;
 	           }
 	           case GPIO::APPLICATION_EXIT: {                  
@@ -1223,10 +1238,13 @@ int main(int argc, char const * argv[]){
 	            }
 	            else{
 	            	GPIOagent.m_pause();
-	            	cout << "System paused. Press any key to resume..." << endl;
+	            	//cout << "System paused. Press any key to resume..." << endl;
 	            }
 	        }
 	        
+	        if (GPIOagent.getState() == GPIO::APPLICATION_PAUSED){
+	        	cout << "System paused. Press any key to resume..." << endl;
+			}
 		//if (signalReceivedFlag.load()){GPIOagent.~GPIO();}// Destroy the instance// done somewhere else
 	    // Time wall
 	    //GPIOagent.RelativeNanoSleepWait((unsigned int)(WaitTimeAfterMainWhileLoop)); // Like this, it will depend on how long in time the previous functions have lasted

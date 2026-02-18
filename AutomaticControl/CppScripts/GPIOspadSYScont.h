@@ -188,7 +188,8 @@ public:	// Functions/Methods
 	int SendControlSignals(); // Write the AC Geiger signals (Frequency, duty cycle...)Uses output pins to clock subsystems physically generating qubits or entangled qubits
 	int LOCAL_DDMinit();	
 	int DisablePRUs();
-	int HandleInterruptPRUs(); // Main call function to manage the operation in/out of the PRUs
+	int HandleInterruptPRUsActive(); // Main call function to manage the operation in/out of the PRUs when system active
+	int HandleInterruptPRUsPaused(); // Main call function to manage the operation in/out of the PRUs when system paused
 	int RelativeNanoSleepWait(unsigned int TimeNanoSecondsSleep);
 	~GPIO();  //destructor
 	// For SPI communications
@@ -204,6 +205,7 @@ private: // Functions/Methods
 	// Data processing
 	int DDRdumpdata();
 	int ReadTimeCounts();// Read the associated SPAD counters
+	int OperDataDebShow(); // Showing data specially in debbuging
 	// Mean filter
 	long double LongDoubleMeanFilterSubArray(long double* ArrayHolderAux,int MeanFilterFactor);
 	int IntMeanFilterSubArray(int* ArrayHolderAux,int MeanFilterFactor);
