@@ -545,7 +545,7 @@ int GPIO::calculateSPADControl(){
         }
         
         // Store for next iteration
-        if (total_cps>0.0){ // Update values if different than 0
+        if (total_cps>0.0 && inflection_counter==0){ // Update values if different than 0
 	        last_avg_cps = avg_cps;	        
     	}
     	last_voltage = current_desired_voltage;
@@ -756,6 +756,7 @@ int GPIO::HandleInterruptPRUsPaused(){ // Uses output pins to clock subsystems p
 	ReadTimeCounts(); // Read the counters of detections
 	
 	cout << "\033[2J\033[1;1H"; // Clear the terminal screen and move the cursor to the top row
+	cout << "At target: " << fixed << setprecision(2) << currentVoltageValue << "V" << endl;
 	OperDataDebShow();
 
 	return 0;// All ok
