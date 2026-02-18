@@ -127,9 +127,9 @@ private:// Variables
 	double voltage_error=0; // Initialization
 	double voltage_error_thresholdPercent=0.4; // Equivalent to a per one 
 	// PID gains - tune these experimentally
-    const double Kp_voltage = 0.080; // It has to be larger than the minimum SPI voltage step MIN_SPI_V_STEP
-    const double Ki_voltage = 0.001; // Times voltage_integral_limit it has to be larger than the minimum SPI voltage step MIN_SPI_V_STEP
-    const double Kd_voltage = 0.002; // When divided by DT it has to be larger than the minimum SPI voltage step MIN_SPI_V_STEP
+    const double Kp_voltage = 0.100; // It has to be larger than the minimum SPI voltage step MIN_SPI_V_STEP
+    const double Ki_voltage = 0.010; // Times voltage_integral_limit it has to be larger than the minimum SPI voltage step MIN_SPI_V_STEP
+    const double Kd_voltage = 0.005; // When divided by DT it has to be larger than the minimum SPI voltage step MIN_SPI_V_STEP
     
     const double Kp_duty = 0.3;
     const double Ki_duty = 0.1;
