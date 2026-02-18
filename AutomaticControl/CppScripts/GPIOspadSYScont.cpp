@@ -523,12 +523,23 @@ int GPIO::calculateSPADControl(){
         avg_cps = total_cps / numChactive;
         voltage_error = (TARGET_CPS - avg_cps) / (TARGET_CPS);
         
-        // NEW: Check if we're past the inflection point (voltage increase significantly decreased counts)
+        // NEW: Check if we're past the inflection point (requires 3 consecutive detections)
         if (current_desired_voltage > last_voltage && avg_cps < last_avg_cps * 0.8) {
-            past_inflection_point = true;
-        } else if (avg_cps > last_avg_cps * 1.2) {
-            // Reset flag if we're clearly on rising edge again
+            inflection_counter++;
+            if (inflection_counter >= 3) {
+                past_inflection_point = true;
+                cout << "Detected passing voltage inflection point. Implementing voltage drop correction!"<< endl;
+            }
+        }
+        else {
+            // Reset counter if condition not met
+            inflection_counter = 0;
+        }
+        
+        // Reset flag if we're clearly on rising edge again
+        if (avg_cps > last_avg_cps * 1.2) {
             past_inflection_point = false;
+            inflection_counter = 0;
         }
         
         // Store for next iteration

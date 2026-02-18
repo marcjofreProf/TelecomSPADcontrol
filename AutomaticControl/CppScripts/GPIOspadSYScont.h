@@ -131,6 +131,7 @@ private:// Variables
 	double last_avg_cps = 0;
     double last_voltage = 0;
     bool past_inflection_point = false;
+    int inflection_counter = 0;
 
 	// PID gains - tune these experimentally
     const double Kp_voltage = 0.150; // It has to be larger than the minimum SPI voltage step MIN_SPI_V_STEP
