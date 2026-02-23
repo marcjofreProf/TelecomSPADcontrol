@@ -570,18 +570,18 @@ int GPIO::calculateSPADControl(){
         double D_voltage = Kd_voltage * (voltage_error - voltage_prev_error) / DT;
         voltage_prev_error = voltage_error;
         
-        double voltage_adj = P_voltage + I_voltage + D_voltage;
-        
-        // NEW: Force voltage reduction if past inflection point
-        if (past_inflection_point) {
-            voltage_adj = -MAX_V_STEP; // Force maximum reduction
-            // Reset integral to prevent windup
-            voltage_integral = 0;
-        }
+        double voltage_adj = P_voltage + I_voltage + D_voltage;       
         
         // Limit voltage step
         if(voltage_adj > MAX_V_STEP) voltage_adj = MAX_V_STEP;
         if(voltage_adj < -MAX_V_STEP) voltage_adj = -MAX_V_STEP;
+
+        // NEW: Force voltage reduction if past inflection point
+        if (past_inflection_point) {
+            voltage_adj = -7.0*MAX_V_STEP; // Force maximum reduction
+            // Reset integral to prevent windup
+            voltage_integral = 0;
+        }
         
         // Update voltage
         current_desired_voltage += voltage_adj;
