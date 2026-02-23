@@ -525,7 +525,7 @@ int GPIO::calculateSPADControl(){
         
         // NEW: Check if we're past the inflection point (requires 3 consecutive detections)
         if (current_desired_voltage > last_voltage && avg_cps < last_avg_cps * 0.8) {
-        	if (total_cps>0.0 || (inflection_counter>0.0 && total_cps==0.0)){ // Update values if different than 0
+        	if (total_cps>0.0){ // Update values if different than 0
             	inflection_counter++;
             }
             else{
