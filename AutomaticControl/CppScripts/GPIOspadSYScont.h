@@ -125,7 +125,7 @@ private:// Variables
 	unsigned int DetCounterCh[NumDetChannels]; // Holder of the detections per channel
 	// SPAD control
 	double voltage_error=0; // Initialization
-	double voltage_error_thresholdPercent=0.4; // Equivalent to a per one 
+	double voltage_error_thresholdPercent=0.2; // Equivalent to a per one 
 
 	// Non-linear SPAD transfer function control
 	double last_avg_cps = 0;
