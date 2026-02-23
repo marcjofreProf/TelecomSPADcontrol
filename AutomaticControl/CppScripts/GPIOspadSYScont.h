@@ -143,7 +143,7 @@ private:// Variables
     const double Kd_duty = 0.05;
     
     // Limits    
-    const double MIN_VOLTAGE = 45.0;
+    const double MIN_VOLTAGE = 40.0;
     const double MAX_VOLTAGE = 60.0;
     const double AVG_DUTY = (double)pru1_delay_first_off/(double)pru1_cycles_period; // Limits to the values of duty cycle
     const double MIN_DUTY = AVG_DUTY*0.9; // Limits to the values of duty cycle
