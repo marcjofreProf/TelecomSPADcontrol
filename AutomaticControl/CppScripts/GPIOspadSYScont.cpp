@@ -532,7 +532,7 @@ int GPIO::calculateSPADControl(){
             	inflection_counter=0; // reset counter
             }
 
-            if (inflection_counter >= 10) { // Number of checks to consider that it has surpassed the inflection point
+            if (inflection_counter >= 8) { // Number of checks to consider that it has surpassed the inflection point
                 past_inflection_point = true;
                 cout << "Detected passing voltage inflection point. Implementing voltage drop correction!"<< endl;
             }
@@ -549,9 +549,7 @@ int GPIO::calculateSPADControl(){
         }
         
         // Store for next iteration
-        if (total_cps>0.0 && inflection_counter==0){ // Update values if different than 0
-	        last_avg_cps = avg_cps;	        
-    	}
+	    last_avg_cps = avg_cps;
     	last_voltage = current_desired_voltage;
     }
     else{
