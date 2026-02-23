@@ -134,7 +134,7 @@ private:// Variables
     int inflection_counter = 0;
 
 	// PID gains - tune these experimentally
-    const double Kp_voltage = 0.100; // It has to be larger than the minimum SPI voltage step MIN_SPI_V_STEP
+    const double Kp_voltage = 0.450; // It has to be larger than the minimum SPI voltage step MIN_SPI_V_STEP
     const double Ki_voltage = 0.010; // Times voltage_integral_limit it has to be larger than the minimum SPI voltage step MIN_SPI_V_STEP
     const double Kd_voltage = 0.005; // When divided by DT it has to be larger than the minimum SPI voltage step MIN_SPI_V_STEP
     
