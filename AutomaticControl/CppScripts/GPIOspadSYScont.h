@@ -104,7 +104,7 @@ private:// Variables
 	unsigned int* valp; // 32 bits
 
 	// PRU signals settings
-	unsigned int pru1_cycles_period = 2048; // Initial number of clocks per cycle (it has to be power of 2). Sets the frequency of the geiger gating operation. Notice that the actual period is multiplied by PRUclockStepPeriodNanoseconds.
+	unsigned int pru1_cycles_period = 1024; // Initial number of clocks per cycle (it has to be power of 2). Sets the frequency of the geiger gating operation. Notice that the actual period is multiplied by PRUclockStepPeriodNanoseconds.
 	unsigned int pru1_delay_first_off = 20; // Initial number of relative clocks/2 - 1 of the first off. At least 1.
 	unsigned int pru1_delay_second_off = 1; // Initial number of relative clocks/2 - 1 of the second off. At least 1.
 	unsigned int pru1_delay_third_off = 1; // Initial number of relative clocks/2 - 1 of the third off. At least 1.
