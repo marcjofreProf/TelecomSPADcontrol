@@ -148,7 +148,7 @@ private:// Variables
     const double AVG_DUTY = (double)pru1_delay_first_off/(double)pru1_cycles_period; // Limits to the values of duty cycle
     const double MIN_DUTY = AVG_DUTY*0.9; // Limits to the values of duty cycle
     const double MAX_DUTY = 0.4; // Limits to the values of duty cycle
-    const double MAX_V_STEP = 0.45; // At least it has to be larger than 0.2V
+    const double MAX_V_STEP = 0.75; // At least it has to be larger than 0.2V
     const double MAX_DC_STEP = 0.15; // At least it has to be larger than 0.05. Duty cycle step
     const double DT = PRUmeasInterval/1000000000.0;  // Time Interval of counts measurement
 
