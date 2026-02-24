@@ -104,8 +104,8 @@ private:// Variables
 	unsigned int* valp; // 32 bits
 
 	// PRU signals settings
-	unsigned int pru1_cycles_period = 128; // Initial number of clocks per cycle (it has to be power of 2). Sets the frequency of the geiger gating operation. Notice that the actual period is multiplied by PRUclockStepPeriodNanoseconds.
-	unsigned int pru1_delay_first_off = 6; // Initial number of relative clocks/2 - 1 of the first off. At least 1.
+	unsigned int pru1_cycles_period = 512; // Initial number of clocks per cycle (it has to be power of 2). Sets the frequency of the geiger gating operation. Notice that the actual period is multiplied by PRUclockStepPeriodNanoseconds.
+	unsigned int pru1_delay_first_off = 24; // Initial number of relative clocks/2 - 1 of the first off. At least 1.
 	unsigned int pru1_delay_second_off = 1; // Initial number of relative clocks/2 - 1 of the second off. At least 1.
 	unsigned int pru1_delay_third_off = 1; // Initial number of relative clocks/2 - 1 of the third off. At least 1.
 	unsigned int pru1_delay_fourth_off = 1; // Initial number of relative clocks/2 - 1 of the fourth off. At least 1.
@@ -144,7 +144,7 @@ private:// Variables
     
     // Limits    
     const double MIN_VOLTAGE = 40.0;
-    const double MAX_VOLTAGE = 62.0;
+    const double MAX_VOLTAGE = 58.0;
     const double AVG_DUTY = (double)pru1_delay_first_off/(double)pru1_cycles_period; // Limits to the values of duty cycle
     const double MIN_DUTY = AVG_DUTY*0.9; // Limits to the values of duty cycle
     const double MAX_DUTY = 0.4; // Limits to the values of duty cycle
