@@ -365,7 +365,7 @@ int GPIO::SPIrampVoltage(int spi_fdAux, float desired_voltage, float max_rate, b
     }
     
     if (verbose) {
-        cout << "\r\033[K";
+        //cout << "\r\033[K";
         cout << "\r[========================================] 100% (" << fixed << setprecision(2) << desired_voltage << "V)" << endl;
     }
     
