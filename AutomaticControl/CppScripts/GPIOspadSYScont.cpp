@@ -412,29 +412,7 @@ int GPIO::calculateSPADControl(){
     avg_cps=0; // Initialization    
     if (numChactive>0){
         avg_cps = total_cps / numChactive;
-        voltage_error = (TARGET_CPS - avg_cps) / (TARGET_CPS);        
-
-        // NEW: Check if we're past the inflection point (requires 3 consecutive detections)
-        if (abs(voltage_error)>voltage_error_thresholdPercent && (abs(current_desired_voltage - last_voltage) < MIN_SPI_V_STEP || (current_desired_voltage - last_voltage) >= 0.4) && avg_cps <= last_avg_cps * 0.8) {
-        	//if (total_cps>0.0){ // Update values if different than 0
-            //	inflection_counter++;
-            //}
-            //else{
-            //	inflection_counter=0; // reset counter
-            //}
-
-            inflection_counter++;
-
-            if (inflection_counter >= 8) { // Number of checks to consider that it has surpassed the inflection point
-                past_inflection_point = true;
-                cout << "Detected passing voltage inflection point. Implementing voltage drop correction!"<< endl;
-            }
-        }
-        else {
-            // Reset counter if condition not met
-            past_inflection_point = false;
-            inflection_counter = 0;
-        }        
+        voltage_error = (TARGET_CPS - avg_cps) / (TARGET_CPS);               
     }
     else{
         voltage_error = 1.0; // 100% error - we want MORE voltage to get counts
@@ -442,7 +420,31 @@ int GPIO::calculateSPADControl(){
         voltage_prev_error = 0.0; // It has to be reset to zero if no counts for the algorithm to advance
         voltage_integral = 0.0; // It has to be reset to zero if no counts for the algorithm to advance
         past_inflection_point = false; // Reset flag when no counts
+        inflection_counter = 0;
     }
+
+    // NEW: Check if we're past the inflection point (requires 3 consecutive detections)
+    if (abs(voltage_error)>voltage_error_thresholdPercent && (abs(current_desired_voltage - last_voltage) < MIN_SPI_V_STEP || (current_desired_voltage - last_voltage) >= 0.4) && (avg_cps <= last_avg_cps * 0.8)) {
+    	//if (total_cps>0.0){ // Update values if different than 0
+        //	inflection_counter++;
+        //}
+        //else{
+        //	inflection_counter=0; // reset counter
+        //}
+
+        inflection_counter++;
+
+        if (inflection_counter >= 8) { // Number of checks to consider that it has surpassed the inflection point
+            past_inflection_point = true;
+            inflection_counter = 0;
+            cout << "Detected passing voltage inflection point. Implementing voltage drop correction!"<< endl;
+        }
+    }
+    else {
+        // Reset counter if condition not met
+        past_inflection_point = false;
+        inflection_counter = 0;
+    } 
 
     // Store for next iteration
 	last_avg_cps = avg_cps;
@@ -472,6 +474,7 @@ int GPIO::calculateSPADControl(){
             // Reset integral to prevent windup
             voltage_integral = 0;
             past_inflection_point=false; // Reset the value
+            inflection_counter = 0;
         }
         else{
         	// Update voltage
@@ -487,6 +490,7 @@ int GPIO::calculateSPADControl(){
     
     return 0;
 }
+
 int GPIO::updatePRU1values(){
 	// Calculate when each channel turns OFF (in cycles from start)
     unsigned int off_time[NumDetChannels];
