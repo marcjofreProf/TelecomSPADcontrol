@@ -57,6 +57,7 @@ public: //Variables
 	int spi_fd; // SPI file descriptor
 	// SPAD parameters - PID
 	double TARGET_CPS = 5000.0;  // Target counts per second (background level) for each individual detection channel
+	float initialDesiredDCvoltage=48.0; // Initial DC bias target
 
 private:// Variables
 	ApplicationState m_state;

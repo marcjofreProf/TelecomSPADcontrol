@@ -582,13 +582,14 @@ int GPIO::calculateSPADControl(){
 
         // NEW: Force voltage reduction if past inflection point
         if (past_inflection_point) {
-            voltage_adj = -10.0*MAX_V_STEP; // Force maximum reduction
+            current_desired_voltage = initialDesiredDCvoltage; // Force maximum reduction
             // Reset integral to prevent windup
             voltage_integral = 0;
         }
-        
-        // Update voltage
-        current_desired_voltage += voltage_adj;
+        else{
+        	// Update voltage
+        	current_desired_voltage += voltage_adj;
+        }
         
         // Clamp voltage
         if(current_desired_voltage < MIN_VOLTAGE) current_desired_voltage = MIN_VOLTAGE;
@@ -1180,7 +1181,6 @@ int main(int argc, char const * argv[]){
 	 //signal(SIGPIPE, SignalPIPEHandler);// Error trying to write/read to a socket
 	 //signal(SIGSEGV, SignalSegmentationFaultHandler);// Segmentation fault
  
-	 float initialDesiredDCvoltage=55.0;
 	 if ( argc == 1 ) {
 	 	cout << "No arguments were passed!" << endl;
 	 }
@@ -1189,7 +1189,7 @@ int main(int argc, char const * argv[]){
 		 //for (int i = 1; i < argc; ++i ) {
 		 //	printf( "  %d. %s\n", i, argv[i] );
 		 //}
-	 	initialDesiredDCvoltage=stof(argv[1]);
+	 	GPIOagent.initialDesiredDCvoltage=stof(argv[1]);
 	 	GPIOagent.TARGET_CPS=stod(argv[2]);
 	 }
 	 
@@ -1203,7 +1203,7 @@ int main(int argc, char const * argv[]){
 	 
 	 //CKPDagent.GenerateSynchClockPRU();// Launch the generation of the clock
 	 // First initial volage bias up
-	 GPIOagent.SPIrampVoltage(GPIOagent.spi_fd, initialDesiredDCvoltage, 2.0, true);
+	 GPIOagent.SPIrampVoltage(GPIOagent.spi_fd, GPIOagent.initialDesiredDCvoltage, 2.0, true);
 	 GPIOagent.SendControlSignals();
 
 	 // Set initial Time Wall
