@@ -471,6 +471,7 @@ int GPIO::calculateSPADControl(){
             current_desired_voltage = initialDesiredDCvoltage; // Force maximum reduction
             // Reset integral to prevent windup
             voltage_integral = 0;
+            past_inflection_point=false; // Reset the value
         }
         else{
         	// Update voltage
@@ -654,6 +655,8 @@ int GPIO::HandleInterruptPRUsActive(){ // Uses output pins to clock subsystems p
 
 		cout << "Condition 4: " << (avg_cps <= last_avg_cps * 0.8 ? "true" : "false") 
     	 << " (avg_cps=" << avg_cps << " <= last_avg_cps*0.8=" << last_avg_cps * 0.8 << ")" << endl;
+
+    	 cout << "inflection_counter = " << inflection_counter << endl;
 
 	return 0;// All ok
 }
