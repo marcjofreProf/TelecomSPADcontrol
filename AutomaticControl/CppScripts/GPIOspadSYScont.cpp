@@ -646,7 +646,7 @@ int GPIO::OperDataDebShow(){ // Show operationaldata
 }
 
 int GPIO::HandleInterruptPRUsActive(){ // Uses output pins to clock subsystems physically generating qubits or entangled qubits
-	cout << "\033[2J\033[1;1H"; // Clear the terminal screen and move the cursor to the top row
+	//cout << "\033[2J\033[1;1H"; // Clear the terminal screen and move the cursor to the top row
 
 	ReadTimeCounts(); // Read the counters of detections
 	calculateSPADControl(); // Calculate the adjustmenst to do
