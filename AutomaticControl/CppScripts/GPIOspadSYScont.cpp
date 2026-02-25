@@ -415,7 +415,7 @@ int GPIO::calculateSPADControl(){
         voltage_error = (TARGET_CPS - avg_cps) / (TARGET_CPS);
         
         // NEW: Check if we're past the inflection point (requires 3 consecutive detections)
-        if (abs(current_desired_voltage - last_voltage) >= 0.01 && avg_cps <= last_avg_cps * 0.8) {
+        if (abs(voltage_error)>voltage_error_thresholdPercent && (current_desired_voltage - last_voltage) >= 0.1 && avg_cps <= last_avg_cps * 0.8) {
         	//if (total_cps>0.0){ // Update values if different than 0
             //	inflection_counter++;
             //}
@@ -434,11 +434,7 @@ int GPIO::calculateSPADControl(){
             // Reset counter if condition not met
             past_inflection_point = false;
             inflection_counter = 0;
-        }
-        
-        // Store for next iteration
-	    last_avg_cps = avg_cps;
-    	last_voltage = current_desired_voltage;
+        }        
     }
     else{
         voltage_error = 1.0; // 100% error - we want MORE voltage to get counts
@@ -447,6 +443,10 @@ int GPIO::calculateSPADControl(){
         voltage_integral = 0.0; // It has to be reset to zero if no counts for the algorithm to advance
         past_inflection_point = false; // Reset flag when no counts
     }
+
+    // Store for next iteration
+	last_avg_cps = avg_cps;
+	last_voltage = current_desired_voltage;
     
     // Voltage PID calculation
     if (abs(voltage_error)>voltage_error_thresholdPercent || total_cps==0.0){// Only change PID value if the error is larger than 10% or if no average counts
