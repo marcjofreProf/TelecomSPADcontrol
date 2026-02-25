@@ -365,7 +365,7 @@ int GPIO::SPIrampVoltage(int spi_fdAux, float desired_voltage, float max_rate, b
     }
     
     if (verbose) {
-        //cout << "\r\033[K";
+        cout << "\r\033[K";
         cout << "\r[========================================] 100% (" << fixed << setprecision(2) << desired_voltage << "V)" << endl;
     }
     
@@ -409,23 +409,10 @@ int GPIO::calculateSPADControl(){
     }
     
     // Calculate average and voltage error
-    double avg_cps=0; // Initialization    
+    avg_cps=0; // Initialization    
     if (numChactive>0){
         avg_cps = total_cps / numChactive;
-        voltage_error = (TARGET_CPS - avg_cps) / (TARGET_CPS);
-        
-        // Print the 4 individual conditions
-		cout << "Condition 1: " << (abs(voltage_error) > voltage_error_thresholdPercent ? "true" : "false") 
-    	 << " (|voltage_error|=" << abs(voltage_error) << " > threshold=" << voltage_error_thresholdPercent << ")" << endl;
-
-		cout << "Condition 2: " << (abs(current_desired_voltage - last_voltage) < MIN_SPI_V_STEP ? "true" : "false") 
-    	 << " (|diff|=" << abs(current_desired_voltage - last_voltage) << " < MIN_SPI_V_STEP=" << MIN_SPI_V_STEP << ")" << endl;
-
-		cout << "Condition 3: " << ((current_desired_voltage - last_voltage) >= 0.4 ? "true" : "false") 
-    	 << " (diff=" << (current_desired_voltage - last_voltage) << " >= 0.4)" << endl;
-
-		cout << "Condition 4: " << (avg_cps <= last_avg_cps * 0.8 ? "true" : "false") 
-    	 << " (avg_cps=" << avg_cps << " <= last_avg_cps*0.8=" << last_avg_cps * 0.8 << ")" << endl;
+        voltage_error = (TARGET_CPS - avg_cps) / (TARGET_CPS);        
 
         // NEW: Check if we're past the inflection point (requires 3 consecutive detections)
         if (abs(voltage_error)>voltage_error_thresholdPercent && (abs(current_desired_voltage - last_voltage) < MIN_SPI_V_STEP || (current_desired_voltage - last_voltage) >= 0.4) && avg_cps <= last_avg_cps * 0.8) {
@@ -646,7 +633,7 @@ int GPIO::OperDataDebShow(){ // Show operationaldata
 }
 
 int GPIO::HandleInterruptPRUsActive(){ // Uses output pins to clock subsystems physically generating qubits or entangled qubits
-	//cout << "\033[2J\033[1;1H"; // Clear the terminal screen and move the cursor to the top row
+	cout << "\033[2J\033[1;1H"; // Clear the terminal screen and move the cursor to the top row
 
 	ReadTimeCounts(); // Read the counters of detections
 	calculateSPADControl(); // Calculate the adjustmenst to do
@@ -654,6 +641,19 @@ int GPIO::HandleInterruptPRUsActive(){ // Uses output pins to clock subsystems p
 	SPIrampVoltage(spi_fd, current_desired_voltage, 2.0, true); // Apply DC bias adjustments // Verbose should be turn to false one debugging is complete
 
 	OperDataDebShow();
+
+	// Print the 4 individual conditions for checking is surpassed inflection point
+		cout << "Condition 1: " << (abs(voltage_error) > voltage_error_thresholdPercent ? "true" : "false") 
+    	 << " (|voltage_error|=" << abs(voltage_error) << " > threshold=" << voltage_error_thresholdPercent << ")" << endl;
+
+		cout << "Condition 2: " << (abs(current_desired_voltage - last_voltage) < MIN_SPI_V_STEP ? "true" : "false") 
+    	 << " (|diff|=" << abs(current_desired_voltage - last_voltage) << " < MIN_SPI_V_STEP=" << MIN_SPI_V_STEP << ")" << endl;
+
+		cout << "Condition 3: " << ((current_desired_voltage - last_voltage) >= 0.4 ? "true" : "false") 
+    	 << " (diff=" << (current_desired_voltage - last_voltage) << " >= 0.4)" << endl;
+
+		cout << "Condition 4: " << (avg_cps <= last_avg_cps * 0.8 ? "true" : "false") 
+    	 << " (avg_cps=" << avg_cps << " <= last_avg_cps*0.8=" << last_avg_cps * 0.8 << ")" << endl;
 
 	return 0;// All ok
 }

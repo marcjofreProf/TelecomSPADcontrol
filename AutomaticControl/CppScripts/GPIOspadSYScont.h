@@ -117,6 +117,7 @@ private:// Variables
 	double voltage_error_thresholdPercent=0.2; // Equivalent to a per one 
 
 	// Non-linear SPAD transfer function control
+	double avg_cps=0; // Initialization 
 	double last_avg_cps = 0;
     double last_voltage = 0;
     bool past_inflection_point = false;
