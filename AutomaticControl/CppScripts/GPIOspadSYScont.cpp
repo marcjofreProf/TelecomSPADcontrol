@@ -414,6 +414,19 @@ int GPIO::calculateSPADControl(){
         avg_cps = total_cps / numChactive;
         voltage_error = (TARGET_CPS - avg_cps) / (TARGET_CPS);
         
+        // Print the 4 individual conditions
+cout << "Condition 1: " << (abs(voltage_error) > voltage_error_thresholdPercent ? "true" : "false") 
+     << " (|voltage_error|=" << abs(voltage_error) << " > threshold=" << voltage_error_thresholdPercent << ")" << endl;
+
+cout << "Condition 2: " << (abs(current_desired_voltage - last_voltage) < MIN_SPI_V_STEP ? "true" : "false") 
+     << " (|diff|=" << abs(current_desired_voltage - last_voltage) << " < MIN_SPI_V_STEP=" << MIN_SPI_V_STEP << ")" << endl;
+
+cout << "Condition 3: " << ((current_desired_voltage - last_voltage) >= 0.4 ? "true" : "false") 
+     << " (diff=" << (current_desired_voltage - last_voltage) << " >= 0.4)" << endl;
+
+cout << "Condition 4: " << (avg_cps <= last_avg_cps * 0.8 ? "true" : "false") 
+     << " (avg_cps=" << avg_cps << " <= last_avg_cps*0.8=" << last_avg_cps * 0.8 << ")" << endl;
+     
         // NEW: Check if we're past the inflection point (requires 3 consecutive detections)
         if (abs(voltage_error)>voltage_error_thresholdPercent && (abs(current_desired_voltage - last_voltage) < MIN_SPI_V_STEP || (current_desired_voltage - last_voltage) >= 0.4) && avg_cps <= last_avg_cps * 0.8) {
         	//if (total_cps>0.0){ // Update values if different than 0
