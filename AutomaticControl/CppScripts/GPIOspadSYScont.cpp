@@ -657,7 +657,7 @@ int GPIO::HandleInterruptPRUsActive(){ // Uses output pins to clock subsystems p
 		cout << "Condition 3: " << ((current_desired_voltage - last_voltage) >= 0.4 ? "true" : "false") 
     	 << " (diff=" << (current_desired_voltage - last_voltage) << " >= 0.4)" << endl;
 
-		cout << "Condition 4: " << (avg_cps <= last_avg_cps * 0.8 ? "true" : "false") 
+		cout << "Condition 4: " << (avg_cps <= last_avg_cps * 1.2 ? "true" : "false") 
     	 << " (avg_cps=" << avg_cps << " <= last_avg_cps*0.8=" << last_avg_cps * 0.8 << ")" << endl;
 
     	 cout << "Condition 5: " << ((current_desired_voltage + MIN_SPI_V_STEP) >= MAX_VOLTAGE ? "true" : "false") 
