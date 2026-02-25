@@ -449,7 +449,7 @@ int GPIO::calculateSPADControl(){
 	last_voltage = current_desired_voltage;
     
     // Voltage PID calculation
-    if (abs(voltage_error)>voltage_error_thresholdPercent || total_cps==0.0){// Only change PID value if the error is larger than 10% or if no average counts
+    if (abs(voltage_error)>voltage_error_thresholdPercent){// Only change PID value if the error is larger than 10% or if no average counts
         double P_voltage = Kp_voltage * voltage_error;
         
         voltage_integral += voltage_error * DT;
@@ -1082,7 +1082,7 @@ int main(int argc, char const * argv[]){
 	 
 	 cout << "GPIOspadSYScont started..." << endl;
 	 
-	 
+	 GPIOagent.m_start(); // Initial status
 	 
 	 bool isValidWhileLoop=true;
 	 if (GPIOagent.getState()==GPIO::APPLICATION_EXIT){isValidWhileLoop = false;}
