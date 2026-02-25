@@ -47,20 +47,8 @@ namespace exploringBB {
 	enum GPIO_EDGE{ NONE, RISING, FALLING, BOTH };
 
 	class GPIO {
-public: //Variables
-	enum ApplicationState { // State of the agent sequences
-		APPLICATION_RUNNING = 0,
-		APPLICATION_PAUSED = 1,  // Out of Focus or Paused If In A Timed Situation
-		APPLICATION_EXIT = -1,
-	    };
-	// SPI communications
-	int spi_fd; // SPI file descriptor
-	// SPAD parameters - PID
-	double TARGET_CPS = 5000.0;  // Target counts per second (background level) for each individual detection channel
-	float initialDesiredDCvoltage=48.0; // Initial DC bias target
 
-private:// Variables
-	ApplicationState m_state;
+private:// Variables	
 	// Priority values
 	int PriorityValRegular=60; // Regular priority during most of the operation
 	int PriorityValTop=70; // Top priority for critical operations
@@ -121,7 +109,7 @@ private:// Variables
     const float MAX_V = 88.7;
     const float RATIO = (MAX_V - MIN_V) / 255.0;
     const float MIN_SPI_V_STEP=0.2; // comes from the fact that the voltage range is around 50V in 255 values
-	float currentVoltageValue=MIN_V; // In volts // Initial value and follow up values storage
+	
 	// Detection counters
 	unsigned int DetCounterCh[NumDetChannels]; // Holder of the detections per channel
 	// SPAD control
@@ -168,33 +156,19 @@ private:// Variables
 	double voltage_integral_limit = (MAX_VOLTAGE - MIN_VOLTAGE) / 2.0 / Ki_voltage;
 	double duty_integral_limit = (MAX_DUTY - MIN_DUTY) / 2.0 / Ki_duty;
 
-public:	// Functions/Methods
-	// PRU
-	GPIO(); // initializates PRU operation
-	// PRU synchronization
-	int NonBusyTimeWall();
-	int SetNewFutureTimeWall();
-	// Managing status of this Agent
-	// resume may keep track of time if the application uses a timer.
-    // This is what makes it different than start() where the timer
-    // in start() would be initialized to 0. And the last time before
-    // paused was trigger would be saved, and then reset as new starting
-    // time for your timer or counter. 
-    ApplicationState getState() const { return m_state; }    
-    bool m_start() { m_state = APPLICATION_RUNNING; return true; }
-    bool m_pause() { m_state = APPLICATION_PAUSED; return true; }    
-    bool m_resume() { m_state = APPLICATION_RUNNING; return true; }      
-    bool m_exit() { m_state = APPLICATION_EXIT;  return false; }
-	int InitAgentProcess();
-	int SendControlSignals(); // Write the AC Geiger signals (Frequency, duty cycle...)Uses output pins to clock subsystems physically generating qubits or entangled qubits
-	int LOCAL_DDMinit();	
-	int DisablePRUs();
-	int HandleInterruptPRUsActive(); // Main call function to manage the operation in/out of the PRUs when system active
-	int HandleInterruptPRUsPaused(); // Main call function to manage the operation in/out of the PRUs when system paused
-	int RelativeNanoSleepWait(unsigned int TimeNanoSecondsSleep);
-	~GPIO();  //destructor
-	// For SPI communications
-	int SPIrampVoltage(int spi_fdAux, float desired_voltage, float max_rate, bool verbose);
+public: //Variables
+	enum ApplicationState { // State of the agent sequences
+		APPLICATION_RUNNING = 0,
+		APPLICATION_PAUSED = 1,  // Out of Focus or Paused If In A Timed Situation
+		APPLICATION_EXIT = -1,
+	    };
+	// SPI communications
+	int spi_fd; // SPI file descriptor
+	// SPAD parameters - PID
+	ApplicationState m_state;
+	double TARGET_CPS = 5000.0;  // Target counts per second (background level) for each individual detection channel
+	float initialDesiredDCvoltage=48.0; // Initial DC bias target
+	float currentVoltageValue=MIN_V; // In volts // Initial value and follow up values storage
 
 private: // Functions/Methods
 	int KillcodePRUs();
@@ -225,6 +199,34 @@ private: // Functions/Methods
 	// SPAD control
 	int calculateSPADControl();
 	int updatePRU1values();
+
+public:	// Functions/Methods
+	// PRU
+	GPIO(); // initializates PRU operation
+	// PRU synchronization
+	int NonBusyTimeWall();
+	int SetNewFutureTimeWall();
+	// Managing status of this Agent
+	// resume may keep track of time if the application uses a timer.
+    // This is what makes it different than start() where the timer
+    // in start() would be initialized to 0. And the last time before
+    // paused was trigger would be saved, and then reset as new starting
+    // time for your timer or counter. 
+    ApplicationState getState() const { return m_state; }    
+    bool m_start() { m_state = APPLICATION_RUNNING; return true; }
+    bool m_pause() { m_state = APPLICATION_PAUSED; return true; }    
+    bool m_resume() { m_state = APPLICATION_RUNNING; return true; }      
+    bool m_exit() { m_state = APPLICATION_EXIT;  return false; }
+	int InitAgentProcess();
+	int SendControlSignals(); // Write the AC Geiger signals (Frequency, duty cycle...)Uses output pins to clock subsystems physically generating qubits or entangled qubits
+	int LOCAL_DDMinit();	
+	int DisablePRUs();
+	int HandleInterruptPRUsActive(); // Main call function to manage the operation in/out of the PRUs when system active
+	int HandleInterruptPRUsPaused(); // Main call function to manage the operation in/out of the PRUs when system paused
+	int RelativeNanoSleepWait(unsigned int TimeNanoSecondsSleep);
+	~GPIO();  //destructor
+	// For SPI communications
+	int SPIrampVoltage(int spi_fdAux, float desired_voltage, float max_rate, bool verbose);
 };
 
 } /* namespace exploringBB */

@@ -1076,6 +1076,7 @@ int main(int argc, char const * argv[]){
 		 //	printf( "  %d. %s\n", i, argv[i] );
 		 //}
 	 	GPIOagent.initialDesiredDCvoltage=stof(argv[1]);
+	 	GPIOagent.currentVoltageValue=GPIOagent.initialDesiredDCvoltage;
 	 	GPIOagent.TARGET_CPS=stod(argv[2]);
 	 }
 	 
