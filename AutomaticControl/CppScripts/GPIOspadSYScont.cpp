@@ -420,7 +420,6 @@ int GPIO::calculateSPADControl(){
         voltage_prev_error = 0.0; // It has to be reset to zero if no counts for the algorithm to advance
         voltage_integral = 0.0; // It has to be reset to zero if no counts for the algorithm to advance
         past_inflection_point = false; // Reset flag when no counts
-        inflection_counter = 0;
     }
 
     // NEW: Check if we're past the inflection point (requires 3 consecutive detections)
