@@ -135,6 +135,7 @@ private:// Variables
     // Limits    
     const double MIN_VOLTAGE = 40.0;
     const double MAX_VOLTAGE = 60.0;
+    bool InvDutyCycleOper=true; // false: regular definition of duty cycle; true: inverted operation with respect the duty cycle
     const double AVG_DUTY = (double)pru1_delay_first_off/(double)pru1_cycles_period; // Limits to the values of duty cycle
     const double MIN_DUTY = AVG_DUTY*0.9; // Limits to the values of duty cycle
     const double MAX_DUTY = 0.4; // Limits to the values of duty cycle

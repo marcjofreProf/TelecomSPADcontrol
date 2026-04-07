@@ -485,7 +485,58 @@ int GPIO::calculateSPADControl(){
         if(current_desired_voltage > MAX_VOLTAGE) current_desired_voltage = MAX_VOLTAGE;
     }
     
-    // ... rest of your duty cycle code remains exactly the same ...
+    // Update duty cycles for each channel
+    for(int i = 0; i < NumDetChannels; i++) {
+    	//if (DetCounterCh[i]>0 && numChactive>1){ // Actuate for each individual channel if there are associated detections for more than one channel
+    		// Calculate how much this channel deviates from average
+            double deviation = (avg_cps - (((double)DetCounterCh[i]) / ((double)DT))) / avg_cps;
+	        // Only adjust if deviation is significant (>5%)
+            if (fabs(deviation) > 0.05 && DetCounterCh[i]>0) {
+                // Duty PID uses deviation as error (not absolute error)
+                double P_duty = Kp_duty * deviation;
+                
+                duty_integrals[i] += deviation * DT;
+                if(duty_integrals[i] > duty_integral_limit) duty_integrals[i] = duty_integral_limit;
+                if(duty_integrals[i] < -duty_integral_limit) duty_integrals[i] = -duty_integral_limit;
+                double I_duty = Ki_duty * duty_integrals[i];
+                
+                double D_duty = Kd_duty * (deviation - duty_prev_errors[i]) / DT;
+                duty_prev_errors[i] = deviation;
+                
+                double duty_adj = P_duty + I_duty + D_duty;
+
+                // Limit duty cycle step
+			    if(duty_adj > MAX_DC_STEP) duty_adj = MAX_DC_STEP;
+			    if(duty_adj < -MAX_DC_STEP) duty_adj = -MAX_DC_STEP;
+                
+                // Adjust duty cycle: increase if channel is below/above average
+                duty_cycles[i] += duty_adj;
+                
+                // Clamp duty cycle
+                if(duty_cycles[i] < MIN_DUTY) duty_cycles[i] = MIN_DUTY;
+                if(duty_cycles[i] > MAX_DUTY) duty_cycles[i] = MAX_DUTY;
+            }
+            else{
+            	// Channels are balanced - gradually move toward MID_DUTY
+	            // Add restoring force toward midpoint
+	            double midpoint_error = (AVG_DUTY - duty_cycles[i]) / AVG_DUTY;
+	            double midpoint_adj = 0.1 * midpoint_error;  // Slow convergence
+
+	            // Limit duty cycle step
+			    if(midpoint_adj > MAX_DC_STEP) midpoint_adj = MAX_DC_STEP;
+			    if(midpoint_adj < -MAX_DC_STEP) midpoint_adj = -MAX_DC_STEP;
+
+	            duty_cycles[i] += midpoint_adj;
+
+                // Reset PID for this channel if balanced
+                duty_integrals[i] = 0.0;
+                duty_prev_errors[i] = 0.0;
+            }
+	    //}
+	    //else{
+	    //	duty_cycles[i]=AVG_DUTY; // Reset value to mid-point
+	    //}
+    }
     
     return 0;
 }
@@ -493,8 +544,15 @@ int GPIO::calculateSPADControl(){
 int GPIO::updatePRU1values(){
 	// Calculate when each channel turns OFF (in cycles from start)
     unsigned int off_time[NumDetChannels];
-    for (int i = 0; i < NumDetChannels; i++) {
-        off_time[i] = static_cast<unsigned int>(duty_cycles[i] * (double)pru1_cycles_period);
+    for (int i = 0; i < NumDetChannels; i++) {    	
+        if (InvDutyCycleOper){
+        	// If inverted signal with respect the duty cycle
+        	off_time[i] = static_cast<unsigned int>((1.0-duty_cycles[i]) * (double)pru1_cycles_period);
+        }
+        else{
+        	// If regular definition of (not inverted) duty cycle
+        	off_time[i] = static_cast<unsigned int>(duty_cycles[i] * (double)pru1_cycles_period);
+        }
     }
     
     // Sort channels by turn-off time (earliest first)
